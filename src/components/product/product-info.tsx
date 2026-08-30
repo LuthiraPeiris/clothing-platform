@@ -10,6 +10,10 @@ import {
 import { useState } from "react";
 
 import {
+  useCart,
+} from "@/hooks/use-cart";
+
+import {
   useWishlist,
 } from "@/hooks/use-wishlist";
 
@@ -52,12 +56,27 @@ export function ProductInfo({
     useState(1);
 
   const {
+    addToCart,
+  } = useCart();
+
+  const {
     toggleWishlist,
     isWishlisted,
   } = useWishlist();
 
   const wishlisted =
     isWishlisted(product.id);
+
+  function handleAddToCart() {
+    addToCart({
+      product,
+      quantity,
+      selectedSize:
+        selectedSize || undefined,
+      selectedColor:
+        selectedColor || undefined,
+    });
+  }
 
   return (
     <div>
@@ -69,7 +88,7 @@ export function ProductInfo({
         {product.name}
       </h1>
 
-      <div className="mt-4 flex items-center gap-3">
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         <span className="text-xl font-semibold">
           {formatCurrency(
             product.price
@@ -176,9 +195,14 @@ export function ProductInfo({
       <div className="mt-8 flex gap-3">
         <button
           type="button"
+          onClick={
+            handleAddToCart
+          }
           className="flex h-14 flex-1 items-center justify-center gap-2 bg-neutral-950 px-6 text-sm font-medium text-white transition hover:bg-neutral-800"
         >
-          <ShoppingBag size={18} />
+          <ShoppingBag
+            size={18}
+          />
 
           Add to Cart
         </button>

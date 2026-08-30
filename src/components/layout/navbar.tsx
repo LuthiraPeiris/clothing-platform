@@ -12,9 +12,19 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 
+import {
+  useCart,
+} from "@/hooks/use-cart";
+
 export function Navbar() {
-  const [mobileMenuOpen, setMobileMenuOpen] =
-    useState(false);
+  const [
+    mobileMenuOpen,
+    setMobileMenuOpen,
+  ] = useState(false);
+
+  const {
+    totalItems,
+  } = useCart();
 
   return (
     <>
@@ -26,11 +36,13 @@ export function Navbar() {
       {/* Navbar */}
       <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Mobile menu button */}
+          {/* Mobile Menu Button */}
           <button
             type="button"
             onClick={() =>
-              setMobileMenuOpen(true)
+              setMobileMenuOpen(
+                true
+              )
             }
             className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100 lg:hidden"
             aria-label="Open menu"
@@ -91,7 +103,9 @@ export function Navbar() {
               className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100"
               aria-label="Search"
             >
-              <Search size={20} />
+              <Search
+                size={20}
+              />
             </Link>
 
             <Link
@@ -99,7 +113,9 @@ export function Navbar() {
               className="hidden h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100 sm:flex"
               aria-label="Wishlist"
             >
-              <Heart size={20} />
+              <Heart
+                size={20}
+              />
             </Link>
 
             <Link
@@ -107,19 +123,28 @@ export function Navbar() {
               className="hidden h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100 sm:flex"
               aria-label="Account"
             >
-              <User size={20} />
+              <User
+                size={20}
+              />
             </Link>
 
             <Link
               href="/cart"
               className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100"
-              aria-label="Cart"
+              aria-label={`Cart with ${totalItems} items`}
             >
-              <ShoppingBag size={20} />
+              <ShoppingBag
+                size={20}
+              />
 
-              <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-black px-1 text-[10px] font-semibold text-white">
-                0
-              </span>
+              {totalItems > 0 && (
+                <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-black px-1 text-[10px] font-semibold text-white">
+                  {totalItems >
+                  99
+                    ? "99+"
+                    : totalItems}
+                </span>
+              )}
             </Link>
           </div>
         </div>
@@ -133,18 +158,22 @@ export function Navbar() {
             type="button"
             className="absolute inset-0 bg-black/40"
             onClick={() =>
-              setMobileMenuOpen(false)
+              setMobileMenuOpen(
+                false
+              )
             }
             aria-label="Close menu"
           />
 
           {/* Drawer */}
-          <div className="relative h-full w-[85%] max-w-sm bg-white px-6 py-6 shadow-xl">
+          <div className="relative h-full w-[85%] max-w-sm overflow-y-auto bg-white px-6 py-6 shadow-xl">
             <div className="flex items-center justify-between">
               <Link
                 href="/"
                 onClick={() =>
-                  setMobileMenuOpen(false)
+                  setMobileMenuOpen(
+                    false
+                  )
                 }
                 className="font-display text-xl font-bold tracking-[0.15em]"
               >
@@ -154,12 +183,16 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() =>
-                  setMobileMenuOpen(false)
+                  setMobileMenuOpen(
+                    false
+                  )
                 }
                 className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100"
                 aria-label="Close menu"
               >
-                <X size={21} />
+                <X
+                  size={21}
+                />
               </button>
             </div>
 
@@ -168,7 +201,9 @@ export function Navbar() {
                 href="/"
                 label="Home"
                 onClick={() =>
-                  setMobileMenuOpen(false)
+                  setMobileMenuOpen(
+                    false
+                  )
                 }
               />
 
@@ -176,7 +211,9 @@ export function Navbar() {
                 href="/shop"
                 label="Shop"
                 onClick={() =>
-                  setMobileMenuOpen(false)
+                  setMobileMenuOpen(
+                    false
+                  )
                 }
               />
 
@@ -184,7 +221,9 @@ export function Navbar() {
                 href="/shop?category=men"
                 label="Men"
                 onClick={() =>
-                  setMobileMenuOpen(false)
+                  setMobileMenuOpen(
+                    false
+                  )
                 }
               />
 
@@ -192,7 +231,9 @@ export function Navbar() {
                 href="/shop?category=women"
                 label="Women"
                 onClick={() =>
-                  setMobileMenuOpen(false)
+                  setMobileMenuOpen(
+                    false
+                  )
                 }
               />
 
@@ -200,7 +241,9 @@ export function Navbar() {
                 href="/shop?sort=newest"
                 label="New Arrivals"
                 onClick={() =>
-                  setMobileMenuOpen(false)
+                  setMobileMenuOpen(
+                    false
+                  )
                 }
               />
             </nav>
@@ -209,23 +252,61 @@ export function Navbar() {
               <Link
                 href="/account"
                 onClick={() =>
-                  setMobileMenuOpen(false)
+                  setMobileMenuOpen(
+                    false
+                  )
                 }
                 className="flex items-center gap-3 py-3 text-sm font-medium"
               >
-                <User size={19} />
+                <User
+                  size={19}
+                />
+
                 My Account
               </Link>
 
               <Link
                 href="/wishlist"
                 onClick={() =>
-                  setMobileMenuOpen(false)
+                  setMobileMenuOpen(
+                    false
+                  )
                 }
                 className="flex items-center gap-3 py-3 text-sm font-medium"
               >
-                <Heart size={19} />
+                <Heart
+                  size={19}
+                />
+
                 Wishlist
+              </Link>
+
+              <Link
+                href="/cart"
+                onClick={() =>
+                  setMobileMenuOpen(
+                    false
+                  )
+                }
+                className="flex items-center justify-between py-3 text-sm font-medium"
+              >
+                <span className="flex items-center gap-3">
+                  <ShoppingBag
+                    size={19}
+                  />
+
+                  Shopping Cart
+                </span>
+
+                {totalItems >
+                  0 && (
+                  <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-neutral-950 px-1.5 text-xs font-semibold text-white">
+                    {totalItems >
+                    99
+                      ? "99+"
+                      : totalItems}
+                  </span>
+                )}
               </Link>
             </div>
           </div>

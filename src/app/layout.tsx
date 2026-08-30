@@ -9,6 +9,14 @@ import {
 
 import "./globals.css";
 
+import {
+  CartProvider,
+} from "@/context/cart-context";
+
+import {
+  WishlistProvider,
+} from "@/context/wishlist-context";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -21,8 +29,8 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "Clothing Store",
-    template: "%s | Clothing Store",
+    default: "MODEVA",
+    template: "%s | MODEVA",
   },
 
   description:
@@ -40,7 +48,11 @@ export default function RootLayout({
       className={`${inter.variable} ${dmSans.variable}`}
     >
       <body>
-        {children}
+        <WishlistProvider>
+          <CartProvider>
+            {children}
+          </CartProvider>
+        </WishlistProvider>
       </body>
     </html>
   );
