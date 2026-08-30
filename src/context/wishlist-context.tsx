@@ -3,7 +3,6 @@
 import {
   createContext,
   useContext,
-  useMemo,
   useState,
 } from "react";
 
@@ -100,17 +99,14 @@ export function WishlistProvider({
     setItems([]);
   }
 
-  const value = useMemo(
-    () => ({
-      items,
-      addToWishlist,
-      removeFromWishlist,
-      toggleWishlist,
-      isWishlisted,
-      clearWishlist,
-    }),
-    [items]
-  );
+  const value: WishlistContextValue = {
+  items,
+  addToWishlist,
+  removeFromWishlist,
+  toggleWishlist,
+  isWishlisted,
+  clearWishlist,
+};
 
   return (
     <WishlistContext.Provider
