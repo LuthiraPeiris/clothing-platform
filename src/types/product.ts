@@ -1,33 +1,14 @@
-export interface Product {
+export type Product = {
   id: string;
-  slug: string;
   name: string;
-  description: string;
-  brand: string;
-  category: string;
-
+  slug: string;
+  category: "men" | "women" | "accessories";
   price: number;
-  discountPrice?: number;
-
-  images: string[];
-
-  variants: ProductVariant[];
-
-  rating: number;
-  reviewCount: number;
-
+  oldPrice?: number;
+  image: string;
+  badge?: string;
+  colors?: string[];
+  sizes?: string[];
   isFeatured?: boolean;
-  isNew?: boolean;
-}
-
-export interface ProductVariant {
-  id: string;
-  sku: string;
-
-  color: string;
-  colorHex?: string;
-
-  size: string;
-
-  stock: number;
-}
+  isNewArrival?: boolean;
+};
