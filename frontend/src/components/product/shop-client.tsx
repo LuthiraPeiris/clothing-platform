@@ -9,9 +9,9 @@ import {
   ProductCard,
 } from "@/components/product/product-card";
 
-import {
-  products,
-} from "@/data/products";
+import type {
+  Product,
+} from "@/types/product";
 
 type Category =
   | "all"
@@ -26,11 +26,13 @@ type SortOption =
   | "price-high";
 
 type ShopClientProps = {
+  products: Product[];
   initialCategory: Category;
   initialSort: SortOption;
 };
 
 export function ShopClient({
+  products,
   initialCategory,
   initialSort,
 }: ShopClientProps) {
@@ -102,7 +104,11 @@ export function ShopClient({
       }
 
       return result;
-    }, [category, sort]);
+    }, [
+      products,
+      category,
+      sort,
+    ]);
 
   return (
     <main className="bg-white">

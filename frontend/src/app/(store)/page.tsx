@@ -22,14 +22,30 @@ import {
   PromoBanner,
 } from "@/components/home/promo-banner";
 
-export default function HomePage() {
+import {
+  getProducts,
+} from "@/services/product-service";
+
+export default async function HomePage() {
+  const products =
+    await getProducts();
+
   return (
     <>
       <HeroSection />
+
       <CategorySection />
-      <FeaturedProducts />
-      <NewArrivals />
+
+      <FeaturedProducts
+        products={products}
+      />
+
+      <NewArrivals
+        products={products}
+      />
+
       <PromoBanner />
+
       <BrandSection />
     </>
   );

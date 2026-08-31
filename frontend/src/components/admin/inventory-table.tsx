@@ -4,54 +4,48 @@ import {
   AlertTriangle,
   Minus,
   Plus,
-  RotateCcw,
 } from "lucide-react";
 
 import Image from "next/image";
-import { useState } from "react";
 
 import {
-  products,
-} from "@/data/products";
+  useState,
+} from "react";
 
-export type InventoryItem = {
-  productId: string;
-  sku: string;
-  stock: number;
-  lowStockThreshold: number;
-};
+import {
+  decreaseStock,
+  increaseStock,
+} from "@/services/inventory-service";
 
-const initialInventory: InventoryItem[] =
-  products.map((product, index) => ({
-    productId: product.id,
-    sku: `MOD-${product.id.padStart(4, "0")}`,
-
-    // Temporary mock stock
-    stock:
-      index === 0
-        ? 4
-        : index === 1
-          ? 8
-          : index === 2
-            ? 0
-            : 15 + index * 3,
-
-    lowStockThreshold: 10,
-  }));
+import type {
+  InventoryItem,
+} from "@/services/inventory-service";
 
 type InventoryTableProps = {
+  initialInventory: InventoryItem[];
+
   onInventoryChange?: (
     inventory: InventoryItem[]
   ) => void;
 };
 
 export function InventoryTable({
+  initialInventory,
   onInventoryChange,
 }: InventoryTableProps) {
-  const [inventory, setInventory] =
-    useState<InventoryItem[]>(
-      initialInventory
-    );
+  const [
+    inventory,
+    setInventory,
+  ] = useState<
+    InventoryItem[]
+  >(initialInventory);
+
+  const [
+    updatingProductId,
+    setUpdatingProductId,
+  ] = useState<
+    number | null
+  >(null);
 
   function saveInventory(
     updatedInventory: InventoryItem[]
@@ -65,100 +59,94 @@ export function InventoryTable({
     );
   }
 
-  function updateStock(
-    productId: string,
-    amount: number
+  function replaceInventoryItem(
+    updatedItem: InventoryItem
   ) {
     const updatedInventory =
-      inventory.map((item) => {
-        if (
-          item.productId !== productId
-        ) {
-          return item;
-        }
-
-        return {
-          ...item,
-          stock: Math.max(
-            0,
-            item.stock + amount
-          ),
-        };
-      });
+      inventory.map(
+        (item) =>
+          item.productId ===
+          updatedItem.productId
+            ? updatedItem
+            : item
+      );
 
     saveInventory(
       updatedInventory
     );
   }
 
-  function setStock(
-    productId: string,
-    stock: number
+  async function handleIncrease(
+    productId: number
   ) {
-    const updatedInventory =
-      inventory.map((item) => {
-        if (
-          item.productId !== productId
-        ) {
-          return item;
-        }
+    try {
+      setUpdatingProductId(
+        productId
+      );
 
-        return {
-          ...item,
-          stock: Math.max(
-            0,
-            stock
-          ),
-        };
-      });
+      const updatedItem =
+        await increaseStock(
+          productId,
+          1
+        );
 
-    saveInventory(
-      updatedInventory
-    );
+      replaceInventoryItem(
+        updatedItem
+      );
+    } catch (error) {
+      console.error(
+        "Failed to increase stock:",
+        error
+      );
+    } finally {
+      setUpdatingProductId(
+        null
+      );
+    }
   }
 
-  function resetInventory() {
-    setInventory(
-      initialInventory
-    );
+  async function handleDecrease(
+    productId: number
+  ) {
+    try {
+      setUpdatingProductId(
+        productId
+      );
 
-    onInventoryChange?.(
-      initialInventory
-    );
+      const updatedItem =
+        await decreaseStock(
+          productId,
+          1
+        );
+
+      replaceInventoryItem(
+        updatedItem
+      );
+    } catch (error) {
+      console.error(
+        "Failed to decrease stock:",
+        error
+      );
+    } finally {
+      setUpdatingProductId(
+        null
+      );
+    }
   }
 
   return (
     <div className="border border-neutral-200 bg-white">
-      {/* Header */}
-      <div className="flex flex-col gap-4 border-b border-neutral-200 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-display text-xl font-semibold">
-            Stock levels
-          </h2>
+      <div className="border-b border-neutral-200 p-5">
+        <h2 className="font-display text-xl font-semibold">
+          Stock levels
+        </h2>
 
-          <p className="mt-1 text-sm text-neutral-500">
-            Use the + and − buttons
-            to update the current
-            product stock.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={
-            resetInventory
-          }
-          className="inline-flex h-10 items-center justify-center gap-2 border border-neutral-300 px-4 text-sm font-medium transition hover:border-neutral-950"
-        >
-          <RotateCcw
-            size={15}
-          />
-
-          Reset Mock Stock
-        </button>
+        <p className="mt-1 text-sm text-neutral-500">
+          Update product stock using
+          the controls below.
+        </p>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[800px] text-left">
           <thead className="border-b border-neutral-200 bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
@@ -183,46 +171,39 @@ export function InventoryTable({
 
           <tbody className="divide-y divide-neutral-100">
             {inventory.map(
-              (
-                inventoryItem
-              ) => {
-                const product =
-                  products.find(
-                    (item) =>
-                      item.id ===
-                      inventoryItem.productId
-                  );
-
-                if (!product) {
-                  return null;
-                }
-
+              (item) => {
                 const outOfStock =
-                  inventoryItem.stock ===
-                  0;
+                  item.status ===
+                  "OUT_OF_STOCK";
 
                 const lowStock =
-                  !outOfStock &&
-                  inventoryItem.stock <=
-                    inventoryItem.lowStockThreshold;
+                  item.status ===
+                  "LOW_STOCK";
+
+                const updating =
+                  updatingProductId ===
+                  item.productId;
+
+                const productImage =
+                  item.productImage ||
+                  "/images/products/placeholder.jpg";
 
                 return (
                   <tr
                     key={
-                      product.id
+                      item.id
                     }
                     className="text-sm"
                   >
-                    {/* Product */}
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-4">
                         <div className="relative h-16 w-13 shrink-0 overflow-hidden bg-neutral-100">
                           <Image
                             src={
-                              product.image
+                              productImage
                             }
                             alt={
-                              product.name
+                              item.productName
                             }
                             fill
                             className="object-cover"
@@ -232,27 +213,25 @@ export function InventoryTable({
                         <div>
                           <p className="font-medium text-neutral-950">
                             {
-                              product.name
+                              item.productName
                             }
                           </p>
 
                           <p className="mt-1 text-xs capitalize text-neutral-500">
                             {
-                              product.category
+                              item.category
                             }
                           </p>
                         </div>
                       </div>
                     </td>
 
-                    {/* SKU */}
                     <td className="px-5 py-4 text-neutral-500">
                       {
-                        inventoryItem.sku
+                        item.sku
                       }
                     </td>
 
-                    {/* Status */}
                     <td className="px-5 py-4">
                       {outOfStock ? (
                         <span className="inline-flex items-center gap-1.5 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700">
@@ -277,67 +256,49 @@ export function InventoryTable({
                       )}
                     </td>
 
-                    {/* Stock Controls */}
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
                           onClick={() =>
-                            updateStock(
-                              product.id,
-                              -1
+                            handleDecrease(
+                              item.productId
                             )
                           }
                           disabled={
-                            inventoryItem.stock ===
-                            0
+                            item.stock ===
+                              0 ||
+                            updating
                           }
                           className="flex h-10 w-10 items-center justify-center border border-neutral-300 transition hover:border-neutral-950 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
-                          aria-label={`Decrease stock for ${product.name}`}
+                          aria-label={`Decrease stock for ${item.productName}`}
                         >
                           <Minus
-                            size={
-                              16
-                            }
+                            size={16}
                           />
                         </button>
 
-                        <input
-                          type="number"
-                          min="0"
-                          value={
-                            inventoryItem.stock
+                        <div className="flex h-10 w-20 items-center justify-center border border-neutral-300 font-semibold">
+                          {
+                            item.stock
                           }
-                          onChange={(
-                            event
-                          ) =>
-                            setStock(
-                              product.id,
-                              Number(
-                                event
-                                  .target
-                                  .value
-                              )
-                            )
-                          }
-                          className="h-10 w-20 border border-neutral-300 text-center font-semibold outline-none transition focus:border-neutral-950"
-                        />
+                        </div>
 
                         <button
                           type="button"
                           onClick={() =>
-                            updateStock(
-                              product.id,
-                              1
+                            handleIncrease(
+                              item.productId
                             )
                           }
-                          className="flex h-10 w-10 items-center justify-center border border-neutral-300 transition hover:border-neutral-950 hover:bg-neutral-100"
-                          aria-label={`Increase stock for ${product.name}`}
+                          disabled={
+                            updating
+                          }
+                          className="flex h-10 w-10 items-center justify-center border border-neutral-300 transition hover:border-neutral-950 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
+                          aria-label={`Increase stock for ${item.productName}`}
                         >
                           <Plus
-                            size={
-                              16
-                            }
+                            size={16}
                           />
                         </button>
 
@@ -349,6 +310,19 @@ export function InventoryTable({
                   </tr>
                 );
               }
+            )}
+
+            {inventory.length ===
+              0 && (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-5 py-16 text-center text-sm text-neutral-500"
+                >
+                  No inventory records
+                  available.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

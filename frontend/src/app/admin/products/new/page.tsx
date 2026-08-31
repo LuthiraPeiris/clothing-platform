@@ -24,7 +24,8 @@ export default function NewProductPage() {
         </h1>
 
         <p className="mt-2 text-sm leading-6 text-neutral-500">
-          Add a new product to the store catalogue.
+          Add a new product to the
+          store catalogue.
         </p>
       </div>
 
