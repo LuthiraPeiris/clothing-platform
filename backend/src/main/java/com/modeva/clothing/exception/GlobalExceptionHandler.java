@@ -157,4 +157,36 @@ public ResponseEntity<Map<String, Object>> handleDuplicateInventory(
             .status(HttpStatus.CONFLICT)
             .body(response);
 }
+
+@ExceptionHandler(OrderNotFoundException.class)
+public ResponseEntity<Map<String, Object>> handleOrderNotFound(
+        OrderNotFoundException exception
+) {
+
+    Map<String, Object> response = new HashMap<>();
+
+    response.put(
+            "timestamp",
+            LocalDateTime.now()
+    );
+
+    response.put(
+            "status",
+            HttpStatus.NOT_FOUND.value()
+    );
+
+    response.put(
+            "error",
+            "Not Found"
+    );
+
+    response.put(
+            "message",
+            exception.getMessage()
+    );
+
+    return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(response);
+}
 }
