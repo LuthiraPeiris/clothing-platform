@@ -1,22 +1,22 @@
-"use client";
-
 import {
   Check,
   PackageCheck,
 } from "lucide-react";
 
 import Link from "next/link";
-import { useState } from "react";
 
-export default function OrderSuccessPage() {
-  const [orderNumber] = useState(
-    () =>
-      "MOD-" +
-      Math.floor(
-        100000 +
-          Math.random() * 900000
-      )
-  );
+type OrderSuccessPageProps = {
+  searchParams: Promise<{
+    orderNumber?: string;
+  }>;
+};
+
+export default async function OrderSuccessPage({
+  searchParams,
+}: OrderSuccessPageProps) {
+  const {
+    orderNumber,
+  } = await searchParams;
 
   return (
     <main className="min-h-screen bg-[#faf9f7]">
@@ -24,7 +24,9 @@ export default function OrderSuccessPage() {
         <div className="w-full bg-white p-8 text-center shadow-sm sm:p-12">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-50">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white">
-              <Check size={28} />
+              <Check
+                size={28}
+              />
             </div>
           </div>
 
@@ -33,30 +35,40 @@ export default function OrderSuccessPage() {
           </p>
 
           <h1 className="font-display mt-3 text-4xl font-semibold tracking-tight text-neutral-950 sm:text-5xl">
-            Thank you for your order.
+            Thank you for your
+            order.
           </h1>
 
           <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-neutral-600">
-            Your order has been successfully placed.
-            We&apos;ll send you an update when your
-            items are ready for delivery.
+            Your order has been
+            successfully placed.
+            We&apos;ll send you an
+            update when your items
+            are ready for delivery.
           </p>
 
-          <div className="mx-auto mt-8 max-w-md border border-neutral-200 bg-[#faf9f7] p-5">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-neutral-500">
-              Order Number
-            </p>
+          {orderNumber && (
+            <div className="mx-auto mt-8 max-w-md border border-neutral-200 bg-[#faf9f7] p-5">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-neutral-500">
+                Order Number
+              </p>
 
-            <p className="mt-2 text-lg font-semibold text-neutral-950">
-              {orderNumber}
-            </p>
-          </div>
+              <p className="mt-2 text-lg font-semibold text-neutral-950">
+                {
+                  orderNumber
+                }
+              </p>
+            </div>
+          )}
 
           <div className="mt-8 flex items-center justify-center gap-3 text-sm text-neutral-600">
-            <PackageCheck size={18} />
+            <PackageCheck
+              size={18}
+            />
 
             <span>
-              Estimated delivery: 3–5 business days
+              Estimated delivery:
+              3–5 business days
             </span>
           </div>
 
