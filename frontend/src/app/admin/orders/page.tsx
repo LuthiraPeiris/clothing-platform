@@ -10,10 +10,13 @@ import {
 } from "@/components/admin/orders-table";
 
 import {
-  orders,
-} from "@/data/orders";
+  getOrders,
+} from "@/services/order-service";
 
-export default function AdminOrdersPage() {
+export default async function AdminOrdersPage() {
+  const orders =
+    await getOrders();
+
   const totalOrders =
     orders.length;
 
@@ -21,23 +24,25 @@ export default function AdminOrdersPage() {
     orders.filter(
       (order) =>
         order.status ===
-          "processing" ||
+          "PENDING" ||
         order.status ===
-          "confirmed"
+          "PROCESSING" ||
+        order.status ===
+          "CONFIRMED"
     ).length;
 
   const shipped =
     orders.filter(
       (order) =>
         order.status ===
-        "shipped"
+        "SHIPPED"
     ).length;
 
   const delivered =
     orders.filter(
       (order) =>
         order.status ===
-        "delivered"
+        "DELIVERED"
     ).length;
 
   const stats = [
@@ -118,7 +123,11 @@ export default function AdminOrdersPage() {
       </div>
 
       <div className="mt-6">
-        <OrdersTable />
+        <OrdersTable
+          initialOrders={
+            orders
+          }
+        />
       </div>
     </div>
   );

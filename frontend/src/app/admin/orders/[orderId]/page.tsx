@@ -7,15 +7,22 @@ import {
 
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 import {
-  orders,
-} from "@/data/orders";
+  notFound,
+} from "next/navigation";
+
+import {
+  OrderStatusControl,
+} from "@/components/admin/order-status-control";
 
 import {
   formatCurrency,
 } from "@/lib/formatters";
+
+import {
+  getOrderById,
+} from "@/services/order-service";
 
 type AdminOrderDetailsPageProps = {
   params: Promise<{
@@ -30,13 +37,14 @@ export default async function AdminOrderDetailsPage({
     orderId,
   } = await params;
 
-  const order =
-    orders.find(
-      (item) =>
-        item.id === orderId
-    );
+  let order;
 
-  if (!order) {
+  try {
+    order =
+      await getOrderById(
+        orderId
+      );
+  } catch {
     notFound();
   }
 
@@ -56,50 +64,27 @@ export default async function AdminOrderDetailsPage({
           </p>
 
           <h1 className="font-display mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-            {order.orderNumber}
+            {
+              order.orderNumber
+            }
           </h1>
 
           <p className="mt-2 text-sm text-neutral-500">
             Placed on{" "}
-            {order.date}
+            {formatOrderDate(
+              order.createdAt
+            )}
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <select
-            defaultValue={
-              order.status
-            }
-            className="h-11 border border-neutral-300 bg-white px-4 text-sm font-medium capitalize outline-none focus:border-neutral-950"
-          >
-            <option value="confirmed">
-              Confirmed
-            </option>
-
-            <option value="processing">
-              Processing
-            </option>
-
-            <option value="shipped">
-              Shipped
-            </option>
-
-            <option value="delivered">
-              Delivered
-            </option>
-
-            <option value="cancelled">
-              Cancelled
-            </option>
-          </select>
-
-          <button
-            type="button"
-            className="h-11 bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800"
-          >
-            Update Status
-          </button>
-        </div>
+        <OrderStatusControl
+          orderId={
+            order.id
+          }
+          initialStatus={
+            order.status
+          }
+        />
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[1fr_340px]">
@@ -117,69 +102,75 @@ export default async function AdminOrderDetailsPage({
 
             <div className="mt-6 divide-y divide-neutral-200">
               {order.items.map(
-                (item) => (
-                  <div
-                    key={
-                      item.id
-                    }
-                    className="flex gap-4 py-5 first:pt-0 last:pb-0"
-                  >
-                    <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-neutral-100">
-                      <Image
-                        src={
-                          item.productImage
-                        }
-                        alt={
-                          item.productName
-                        }
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
+                (item) => {
+                  const image =
+                    item.productImage ||
+                    "/images/products/placeholder.jpg";
 
-                    <div className="flex min-w-0 flex-1 justify-between gap-5">
-                      <div>
-                        <p className="font-medium">
-                          {
+                  return (
+                    <div
+                      key={
+                        item.id
+                      }
+                      className="flex gap-4 py-5 first:pt-0 last:pb-0"
+                    >
+                      <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-neutral-100">
+                        <Image
+                          src={
+                            image
+                          }
+                          alt={
                             item.productName
                           }
-                        </p>
-
-                        <p className="mt-2 text-sm text-neutral-500">
-                          Quantity:{" "}
-                          {
-                            item.quantity
-                          }
-                        </p>
-
-                        {item.size && (
-                          <p className="text-sm text-neutral-500">
-                            Size:{" "}
-                            {
-                              item.size
-                            }
-                          </p>
-                        )}
-
-                        {item.color && (
-                          <p className="text-sm text-neutral-500">
-                            Color:{" "}
-                            {
-                              item.color
-                            }
-                          </p>
-                        )}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
 
-                      <p className="shrink-0 font-semibold">
-                        {formatCurrency(
-                          item.price *
-                            item.quantity
-                        )}
-                      </p>
+                      <div className="flex min-w-0 flex-1 justify-between gap-5">
+                        <div>
+                          <p className="font-medium">
+                            {
+                              item.productName
+                            }
+                          </p>
+
+                          <p className="mt-2 text-sm text-neutral-500">
+                            Quantity:{" "}
+                            {
+                              item.quantity
+                            }
+                          </p>
+
+                          {item.selectedSize && (
+                            <p className="text-sm text-neutral-500">
+                              Size:{" "}
+                              {
+                                item.selectedSize
+                              }
+                            </p>
+                          )}
+
+                          {item.selectedColor && (
+                            <p className="text-sm text-neutral-500">
+                              Color:{" "}
+                              {
+                                item.selectedColor
+                              }
+                            </p>
+                          )}
+                        </div>
+
+                        <p className="shrink-0 font-semibold">
+                          {formatCurrency(
+                            item.price *
+                              item.quantity
+                          )}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )
+                  );
+                }
               )}
             </div>
           </section>
@@ -228,9 +219,13 @@ export default async function AdminOrderDetailsPage({
             <div className="mt-5 text-sm">
               <p className="font-medium">
                 {
-                  order
-                    .shippingAddress
-                    .name
+                  order.customerName
+                }
+              </p>
+
+              <p className="mt-1 text-neutral-500">
+                {
+                  order.email
                 }
               </p>
 
@@ -243,9 +238,7 @@ export default async function AdminOrderDetailsPage({
 
                   <span>
                     {
-                      order
-                        .shippingAddress
-                        .phone
+                      order.phone
                     }
                   </span>
                 </div>
@@ -258,23 +251,16 @@ export default async function AdminOrderDetailsPage({
 
                   <span className="leading-6">
                     {
-                      order
-                        .shippingAddress
-                        .address
+                      order.shippingAddress
                     }
                     <br />
 
                     {
-                      order
-                        .shippingAddress
-                        .city
+                      order.city
                     }
-                    ,{" "}
-                    {
-                      order
-                        .shippingAddress
-                        .postalCode
-                    }
+
+                    {order.postalCode &&
+                      `, ${order.postalCode}`}
                   </span>
                 </div>
               </div>
@@ -294,7 +280,7 @@ export default async function AdminOrderDetailsPage({
 
                 <span>
                   {formatCurrency(
-                    order.total
+                    order.subtotal
                   )}
                 </span>
               </div>
@@ -305,7 +291,9 @@ export default async function AdminOrderDetailsPage({
                 </span>
 
                 <span>
-                  Free
+                  {formatCurrency(
+                    order.shippingFee
+                  )}
                 </span>
               </div>
             </div>
@@ -327,5 +315,22 @@ export default async function AdminOrderDetailsPage({
         </div>
       </div>
     </div>
+  );
+}
+
+function formatOrderDate(
+  date: string
+) {
+  return new Intl.DateTimeFormat(
+    "en-LK",
+    {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  ).format(
+    new Date(date)
   );
 }

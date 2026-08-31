@@ -32,8 +32,8 @@ export default function CheckoutPage() {
           </h1>
 
           <p className="mt-4 text-neutral-600">
-            Complete your shipping and
-            payment details.
+            Complete your shipping
+            and payment details.
           </p>
         </div>
       </section>
