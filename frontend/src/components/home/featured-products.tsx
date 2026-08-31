@@ -4,11 +4,17 @@ import {
   ProductCard,
 } from "@/components/product/product-card";
 
-import {
-  products,
-} from "@/data/products";
+import type {
+  Product,
+} from "@/types/product";
 
-export function FeaturedProducts() {
+type FeaturedProductsProps = {
+  products: Product[];
+};
+
+export function FeaturedProducts({
+  products,
+}: FeaturedProductsProps) {
   const featuredProducts =
     products
       .filter(
@@ -39,16 +45,22 @@ export function FeaturedProducts() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-6">
-          {featuredProducts.map(
-            (product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-              />
-            )
-          )}
-        </div>
+        {featuredProducts.length > 0 ? (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-6">
+            {featuredProducts.map(
+              (product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                />
+              )
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-neutral-500">
+            No featured products available.
+          </p>
+        )}
 
         <Link
           href="/shop"

@@ -2,7 +2,14 @@ import {
   ProductTable,
 } from "@/components/admin/product-table";
 
-export default function AdminProductsPage() {
+import {
+  getProducts,
+} from "@/services/product-service";
+
+export default async function ProductsPage() {
+  const products =
+    await getProducts();
+
   return (
     <div>
       <div>
@@ -15,13 +22,18 @@ export default function AdminProductsPage() {
         </h1>
 
         <p className="mt-2 text-sm leading-6 text-neutral-500">
-          Create, update, and manage products
-          available in the store.
+          Manage products, pricing,
+          categories, and catalogue
+          visibility.
         </p>
       </div>
 
       <div className="mt-8">
-        <ProductTable />
+        <ProductTable
+          initialProducts={
+            products
+          }
+        />
       </div>
     </div>
   );

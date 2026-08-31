@@ -5,7 +5,22 @@ import {
   Save,
 } from "lucide-react";
 
-import { useState } from "react";
+import {
+  useRouter,
+} from "next/navigation";
+
+import {
+  useState,
+} from "react";
+
+import {
+  createProduct,
+  updateProduct,
+} from "@/services/product-service";
+
+import type {
+  ProductRequest,
+} from "@/services/product-service";
 
 import type {
   Product,
@@ -18,26 +33,67 @@ type ProductFormProps = {
 export function ProductForm({
   product,
 }: ProductFormProps) {
-  const [form, setForm] = useState({
-    name: product?.name ?? "",
-    slug: product?.slug ?? "",
+  const router =
+    useRouter();
+
+  const [
+    isSubmitting,
+    setIsSubmitting,
+  ] = useState(false);
+
+  const [
+    error,
+    setError,
+  ] = useState<
+    string | null
+  >(null);
+
+  const [
+    form,
+    setForm,
+  ] = useState({
+    name:
+      product?.name ?? "",
+
+    slug:
+      product?.slug ?? "",
+
     category:
-      product?.category ?? "men",
+      product?.category ??
+      "men",
+
     price:
-      product?.price.toString() ?? "",
+      product?.price.toString() ??
+      "",
+
     oldPrice:
       product?.oldPrice?.toString() ??
       "",
-    badge: product?.badge ?? "",
-    image: product?.image ?? "",
+
+    badge:
+      product?.badge ?? "",
+
+    image:
+      product?.image ?? "",
+
     sizes:
-      product?.sizes?.join(", ") ?? "",
+      product?.sizes?.join(
+        ", "
+      ) ?? "",
+
     colors:
-      product?.colors?.join(", ") ?? "",
+      product?.colors?.join(
+        ", "
+      ) ?? "",
+
     featured:
-      product?.isFeatured ?? false,
+      product?.isFeatured ??
+      false,
+
     newArrival:
-      product?.isNewArrival ?? false,
+      product?.isNewArrival ??
+      false,
+
     description:
       "A versatile wardrobe essential designed for everyday comfort and modern styling.",
   });
@@ -48,23 +104,162 @@ export function ProductForm({
       | string
       | boolean
   ) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
+    setForm(
+      (current) => ({
+        ...current,
+        [field]: value,
+      })
+    );
   }
 
-  function handleSubmit(
+  function convertCommaSeparated(
+    value: string
+  ) {
+    return value
+      .split(",")
+      .map(
+        (item) =>
+          item.trim()
+      )
+      .filter(Boolean);
+  }
+
+  async function handleSubmit(
     event: React.FormEvent
   ) {
     event.preventDefault();
 
-    console.log(form);
+    setError(null);
+
+    const price =
+      Number(form.price);
+
+    const oldPrice =
+      form.oldPrice.trim()
+        ? Number(
+            form.oldPrice
+          )
+        : null;
+
+    if (
+      !form.name.trim() ||
+      !form.slug.trim()
+    ) {
+      setError(
+        "Product name and slug are required."
+      );
+
+      return;
+    }
+
+    if (
+      Number.isNaN(price) ||
+      price <= 0
+    ) {
+      setError(
+        "Please enter a valid price greater than 0."
+      );
+
+      return;
+    }
+
+    if (
+      oldPrice !== null &&
+      (
+        Number.isNaN(
+          oldPrice
+        ) ||
+        oldPrice < 0
+      )
+    ) {
+      setError(
+        "Please enter a valid old price."
+      );
+
+      return;
+    }
+
+    const request: ProductRequest =
+      {
+        name:
+          form.name.trim(),
+
+        slug:
+          form.slug
+            .trim()
+            .toLowerCase(),
+
+        category:
+          form.category as ProductRequest["category"],
+
+        price,
+
+        oldPrice,
+
+        image:
+          form.image.trim() ||
+          null,
+
+        badge:
+          form.badge.trim() ||
+          null,
+
+        sizes:
+          convertCommaSeparated(
+            form.sizes
+          ),
+
+        colors:
+          convertCommaSeparated(
+            form.colors
+          ),
+
+        featured:
+          form.featured,
+
+        newArrival:
+          form.newArrival,
+      };
+
+    try {
+      setIsSubmitting(
+        true
+      );
+
+      if (product) {
+        await updateProduct(
+          product.id,
+          request
+        );
+      } else {
+        await createProduct(
+          request
+        );
+      }
+
+      router.push(
+        "/admin/products"
+      );
+
+      router.refresh();
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong."
+      );
+    } finally {
+      setIsSubmitting(
+        false
+      );
+    }
   }
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={
+        handleSubmit
+      }
       className="grid gap-6 xl:grid-cols-[1fr_340px]"
     >
       <div className="space-y-6">
@@ -80,11 +275,17 @@ export function ProductForm({
               </label>
 
               <input
-                value={form.name}
-                onChange={(event) =>
+                required
+                value={
+                  form.name
+                }
+                onChange={(
+                  event
+                ) =>
                   updateField(
                     "name",
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 placeholder="Classic Linen Shirt"
@@ -98,11 +299,17 @@ export function ProductForm({
               </label>
 
               <input
-                value={form.slug}
-                onChange={(event) =>
+                required
+                value={
+                  form.slug
+                }
+                onChange={(
+                  event
+                ) =>
                   updateField(
                     "slug",
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 placeholder="classic-linen-shirt"
@@ -116,11 +323,16 @@ export function ProductForm({
               </label>
 
               <select
-                value={form.category}
-                onChange={(event) =>
+                value={
+                  form.category
+                }
+                onChange={(
+                  event
+                ) =>
                   updateField(
                     "category",
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 className="h-12 w-full border border-neutral-300 bg-white px-4 text-sm outline-none focus:border-neutral-950"
@@ -145,11 +357,16 @@ export function ProductForm({
               </label>
 
               <input
-                value={form.badge}
-                onChange={(event) =>
+                value={
+                  form.badge
+                }
+                onChange={(
+                  event
+                ) =>
                   updateField(
                     "badge",
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 placeholder="New / Sale"
@@ -163,12 +380,20 @@ export function ProductForm({
               </label>
 
               <input
+                required
+                min="0"
+                step="0.01"
                 type="number"
-                value={form.price}
-                onChange={(event) =>
+                value={
+                  form.price
+                }
+                onChange={(
+                  event
+                ) =>
                   updateField(
                     "price",
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 placeholder="6500"
@@ -182,12 +407,19 @@ export function ProductForm({
               </label>
 
               <input
+                min="0"
+                step="0.01"
                 type="number"
-                value={form.oldPrice}
-                onChange={(event) =>
+                value={
+                  form.oldPrice
+                }
+                onChange={(
+                  event
+                ) =>
                   updateField(
                     "oldPrice",
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 placeholder="7500"
@@ -201,16 +433,28 @@ export function ProductForm({
               </label>
 
               <textarea
-                value={form.description}
-                onChange={(event) =>
+                value={
+                  form.description
+                }
+                onChange={(
+                  event
+                ) =>
                   updateField(
                     "description",
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 rows={5}
                 className="w-full resize-none border border-neutral-300 p-4 text-sm outline-none focus:border-neutral-950"
               />
+
+              <p className="mt-2 text-xs text-neutral-500">
+                Description is currently
+                UI-only. We will add it
+                to the backend Product
+                model later.
+              </p>
             </div>
           </div>
         </section>
@@ -227,11 +471,16 @@ export function ProductForm({
               </label>
 
               <input
-                value={form.sizes}
-                onChange={(event) =>
+                value={
+                  form.sizes
+                }
+                onChange={(
+                  event
+                ) =>
                   updateField(
                     "sizes",
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 placeholder="S, M, L, XL"
@@ -239,7 +488,8 @@ export function ProductForm({
               />
 
               <p className="mt-2 text-xs text-neutral-500">
-                Separate sizes with commas.
+                Separate sizes with
+                commas.
               </p>
             </div>
 
@@ -249,11 +499,16 @@ export function ProductForm({
               </label>
 
               <input
-                value={form.colors}
-                onChange={(event) =>
+                value={
+                  form.colors
+                }
+                onChange={(
+                  event
+                ) =>
                   updateField(
                     "colors",
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 placeholder="White, Black, Beige"
@@ -261,7 +516,8 @@ export function ProductForm({
               />
 
               <p className="mt-2 text-xs text-neutral-500">
-                Separate colors with commas.
+                Separate colors with
+                commas.
               </p>
             </div>
           </div>
@@ -286,17 +542,23 @@ export function ProductForm({
               </p>
 
               <p className="mt-1 text-xs text-neutral-500">
-                Image uploading will be connected later.
+                Image uploading will be
+                connected later.
               </p>
             </div>
           </div>
 
           <input
-            value={form.image}
-            onChange={(event) =>
+            value={
+              form.image
+            }
+            onChange={(
+              event
+            ) =>
               updateField(
                 "image",
-                event.target.value
+                event.target
+                  .value
               )
             }
             placeholder="/images/products/example.jpg"
@@ -313,11 +575,16 @@ export function ProductForm({
             <label className="flex items-center gap-3 text-sm">
               <input
                 type="checkbox"
-                checked={form.featured}
-                onChange={(event) =>
+                checked={
+                  form.featured
+                }
+                onChange={(
+                  event
+                ) =>
                   updateField(
                     "featured",
-                    event.target.checked
+                    event.target
+                      .checked
                   )
                 }
               />
@@ -328,11 +595,16 @@ export function ProductForm({
             <label className="flex items-center gap-3 text-sm">
               <input
                 type="checkbox"
-                checked={form.newArrival}
-                onChange={(event) =>
+                checked={
+                  form.newArrival
+                }
+                onChange={(
+                  event
+                ) =>
                   updateField(
                     "newArrival",
-                    event.target.checked
+                    event.target
+                      .checked
                   )
                 }
               />
@@ -342,15 +614,30 @@ export function ProductForm({
           </div>
         </section>
 
+        {error && (
+          <div className="border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         <button
           type="submit"
-          className="flex h-12 w-full items-center justify-center gap-2 bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800"
+          disabled={
+            isSubmitting
+          }
+          className="flex h-12 w-full items-center justify-center gap-2 bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Save size={17} />
+          <Save
+            size={17}
+          />
 
-          {product
-            ? "Update Product"
-            : "Create Product"}
+          {isSubmitting
+            ? product
+              ? "Updating..."
+              : "Creating..."
+            : product
+              ? "Update Product"
+              : "Create Product"}
         </button>
       </div>
     </form>

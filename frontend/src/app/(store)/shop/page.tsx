@@ -1,6 +1,5 @@
-import {
-  ShopClient,
-} from "@/components/product/shop-client";
+import { ShopClient } from "@/components/product/shop-client";
+import { getProducts } from "@/services/product-service";
 
 type Category =
   | "all"
@@ -52,28 +51,22 @@ function getSort(
 export default async function ShopPage({
   searchParams,
 }: ShopPageProps) {
-  const params =
-    await searchParams;
+  const params = await searchParams;
 
   const initialCategory =
-    getCategory(
-      params.category
-    );
+    getCategory(params.category);
 
   const initialSort =
-    getSort(
-      params.sort
-    );
+    getSort(params.sort);
+
+  const products = await getProducts();
 
   return (
     <ShopClient
       key={`${initialCategory}-${initialSort}`}
-      initialCategory={
-        initialCategory
-      }
-      initialSort={
-        initialSort
-      }
+      products={products}
+      initialCategory={initialCategory}
+      initialSort={initialSort}
     />
   );
 }
