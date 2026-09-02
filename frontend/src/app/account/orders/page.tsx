@@ -7,10 +7,13 @@ import {
 } from "@/components/account/order-card";
 
 import {
-  orders,
-} from "@/data/orders";
+  getOrders,
+} from "@/services/order-service";
 
-export default function OrdersPage() {
+export default async function OrdersPage() {
+  const orders =
+    await getOrders();
+
   return (
     <div>
       <div>
@@ -30,12 +33,18 @@ export default function OrdersPage() {
 
       {orders.length > 0 ? (
         <div className="mt-8 space-y-4">
-          {orders.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-            />
-          ))}
+          {orders.map(
+            (order) => (
+              <OrderCard
+                key={
+                  order.id
+                }
+                order={
+                  order
+                }
+              />
+            )
+          )}
         </div>
       ) : (
         <div className="mt-8 flex min-h-[400px] flex-col items-center justify-center border border-neutral-200 bg-white text-center">

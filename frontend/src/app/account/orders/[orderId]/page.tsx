@@ -1,18 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+
+import {
+  notFound,
+} from "next/navigation";
 
 import {
   OrderTracker,
 } from "@/components/account/order-tracker";
 
 import {
-  orders,
-} from "@/data/orders";
-
-import {
   formatCurrency,
 } from "@/lib/formatters";
+
+import {
+  getOrderById,
+} from "@/services/order-service";
 
 type OrderDetailsPageProps = {
   params: Promise<{
@@ -27,13 +30,14 @@ export default async function OrderDetailsPage({
     orderId,
   } = await params;
 
-  const order =
-    orders.find(
-      (item) =>
-        item.id === orderId
-    );
+  let order;
 
-  if (!order) {
+  try {
+    order =
+      await getOrderById(
+        orderId
+      );
+  } catch {
     notFound();
   }
 
@@ -53,16 +57,26 @@ export default async function OrderDetailsPage({
           </p>
 
           <h2 className="font-display mt-2 text-3xl font-semibold">
-            {order.orderNumber}
+            {
+              order.orderNumber
+            }
           </h2>
 
           <p className="mt-2 text-sm text-neutral-500">
-            Ordered on {order.date}
+            Ordered on{" "}
+            {formatOrderDate(
+              order.createdAt
+            )}
           </p>
         </div>
 
         <span className="w-fit bg-neutral-950 px-4 py-2 text-xs font-medium capitalize text-white">
-          {order.status}
+          {order.status
+            .toLowerCase()
+            .replaceAll(
+              "_",
+              " "
+            )}
         </span>
       </div>
 
@@ -73,7 +87,9 @@ export default async function OrderDetailsPage({
 
         <div className="mt-8">
           <OrderTracker
-            status={order.status}
+            status={
+              order.status
+            }
           />
         </div>
       </div>
@@ -85,61 +101,75 @@ export default async function OrderDetailsPage({
 
         <div className="mt-6 divide-y divide-neutral-200">
           {order.items.map(
-            (item) => (
-              <div
-                key={item.id}
-                className="flex gap-4 py-5 first:pt-0 last:pb-0"
-              >
-                <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-neutral-100">
-                  <Image
-                    src={
-                      item.productImage
-                    }
-                    alt={
-                      item.productName
-                    }
-                    fill
-                    className="object-cover"
-                  />
-                </div>
+            (item) => {
+              const image =
+                item.productImage ||
+                "/images/products/placeholder.jpg";
 
-                <div className="flex min-w-0 flex-1 justify-between gap-5">
-                  <div>
-                    <p className="font-medium">
-                      {
+              return (
+                <div
+                  key={
+                    item.id
+                  }
+                  className="flex gap-4 py-5 first:pt-0 last:pb-0"
+                >
+                  <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-neutral-100">
+                    <Image
+                      src={
+                        image
+                      }
+                      alt={
                         item.productName
                       }
-                    </p>
-
-                    <p className="mt-2 text-sm text-neutral-500">
-                      Quantity:{" "}
-                      {item.quantity}
-                    </p>
-
-                    {item.size && (
-                      <p className="text-sm text-neutral-500">
-                        Size:{" "}
-                        {item.size}
-                      </p>
-                    )}
-
-                    {item.color && (
-                      <p className="text-sm text-neutral-500">
-                        Color:{" "}
-                        {item.color}
-                      </p>
-                    )}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
 
-                  <p className="shrink-0 font-semibold">
-                    {formatCurrency(
-                      item.price *
-                        item.quantity
-                    )}
-                  </p>
+                  <div className="flex min-w-0 flex-1 justify-between gap-5">
+                    <div>
+                      <p className="font-medium">
+                        {
+                          item.productName
+                        }
+                      </p>
+
+                      <p className="mt-2 text-sm text-neutral-500">
+                        Quantity:{" "}
+                        {
+                          item.quantity
+                        }
+                      </p>
+
+                      {item.selectedSize && (
+                        <p className="text-sm text-neutral-500">
+                          Size:{" "}
+                          {
+                            item.selectedSize
+                          }
+                        </p>
+                      )}
+
+                      {item.selectedColor && (
+                        <p className="text-sm text-neutral-500">
+                          Color:{" "}
+                          {
+                            item.selectedColor
+                          }
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="shrink-0 font-semibold">
+                      {formatCurrency(
+                        item.price *
+                          item.quantity
+                      )}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )
+              );
+            }
           )}
         </div>
       </div>
@@ -153,34 +183,34 @@ export default async function OrderDetailsPage({
           <div className="mt-4 text-sm leading-6 text-neutral-500">
             <p className="font-medium text-neutral-950">
               {
-                order.shippingAddress
-                  .name
+                order.customerName
               }
             </p>
 
             <p className="mt-1">
               {
                 order.shippingAddress
-                  .address
               }
             </p>
 
             <p>
               {
-                order.shippingAddress
-                  .city
+                order.city
               }
-              ,{" "}
-              {
-                order.shippingAddress
-                  .postalCode
-              }
+
+              {order.postalCode &&
+                `, ${order.postalCode}`}
             </p>
 
             <p className="mt-2">
               {
-                order.shippingAddress
-                  .phone
+                order.phone
+              }
+            </p>
+
+            <p className="mt-1">
+              {
+                order.email
               }
             </p>
           </div>
@@ -199,7 +229,7 @@ export default async function OrderDetailsPage({
 
               <span>
                 {formatCurrency(
-                  order.total
+                  order.subtotal
                 )}
               </span>
             </div>
@@ -210,7 +240,9 @@ export default async function OrderDetailsPage({
               </span>
 
               <span>
-                Free
+                {formatCurrency(
+                  order.shippingFee
+                )}
               </span>
             </div>
           </div>
@@ -231,5 +263,22 @@ export default async function OrderDetailsPage({
         </div>
       </div>
     </div>
+  );
+}
+
+function formatOrderDate(
+  date: string
+) {
+  return new Intl.DateTimeFormat(
+    "en-LK",
+    {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  ).format(
+    new Date(date)
   );
 }
