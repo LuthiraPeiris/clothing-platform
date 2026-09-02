@@ -4,7 +4,7 @@ import {
 
 import type {
   OrderStatus,
-} from "@/types/order";
+} from "@/services/order-service";
 
 type OrderTrackerProps = {
   status: OrderStatus;
@@ -12,19 +12,23 @@ type OrderTrackerProps = {
 
 const steps = [
   {
-    key: "confirmed",
+    key: "PENDING",
+    label: "Pending",
+  },
+  {
+    key: "CONFIRMED",
     label: "Confirmed",
   },
   {
-    key: "processing",
+    key: "PROCESSING",
     label: "Processing",
   },
   {
-    key: "shipped",
+    key: "SHIPPED",
     label: "Shipped",
   },
   {
-    key: "delivered",
+    key: "DELIVERED",
     label: "Delivered",
   },
 ] as const;
@@ -32,10 +36,13 @@ const steps = [
 export function OrderTracker({
   status,
 }: OrderTrackerProps) {
-  if (status === "cancelled") {
+  if (
+    status === "CANCELLED"
+  ) {
     return (
       <div className="border border-red-200 bg-red-50 p-5 text-sm text-red-700">
-        This order has been cancelled.
+        This order has been
+        cancelled.
       </div>
     );
   }
@@ -47,15 +54,21 @@ export function OrderTracker({
     );
 
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="grid grid-cols-5 gap-2">
       {steps.map(
-        (step, index) => {
+        (
+          step,
+          index
+        ) => {
           const completed =
-            index <= currentStep;
+            index <=
+            currentStep;
 
           return (
             <div
-              key={step.key}
+              key={
+                step.key
+              }
               className="relative text-center"
             >
               {index <
@@ -79,7 +92,9 @@ export function OrderTracker({
                 }`}
               >
                 {completed ? (
-                  <Check size={16} />
+                  <Check
+                    size={16}
+                  />
                 ) : (
                   <span className="text-xs">
                     {index + 1}

@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  Input,
+} from "@/components/ui/input";
+
 type ShippingValues = {
   firstName: string;
   lastName: string;
@@ -30,7 +34,7 @@ export function ShippingForm({
       </h2>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <input
+        <Input
           required
           value={
             values.firstName
@@ -45,10 +49,9 @@ export function ShippingForm({
           }
           placeholder="First name"
           autoComplete="given-name"
-          className="h-12 border border-neutral-300 px-4 outline-none focus:border-neutral-950"
         />
 
-        <input
+        <Input
           required
           value={
             values.lastName
@@ -63,10 +66,9 @@ export function ShippingForm({
           }
           placeholder="Last name"
           autoComplete="family-name"
-          className="h-12 border border-neutral-300 px-4 outline-none focus:border-neutral-950"
         />
 
-        <input
+        <Input
           required
           type="email"
           value={
@@ -82,10 +84,10 @@ export function ShippingForm({
           }
           placeholder="Email"
           autoComplete="email"
-          className="h-12 border border-neutral-300 px-4 outline-none focus:border-neutral-950 sm:col-span-2"
+          className="sm:col-span-2"
         />
 
-        <input
+        <Input
           required
           type="tel"
           value={
@@ -101,10 +103,10 @@ export function ShippingForm({
           }
           placeholder="Phone number"
           autoComplete="tel"
-          className="h-12 border border-neutral-300 px-4 outline-none focus:border-neutral-950 sm:col-span-2"
+          className="sm:col-span-2"
         />
 
-        <input
+        <Input
           required
           value={
             values.address
@@ -119,10 +121,10 @@ export function ShippingForm({
           }
           placeholder="Address"
           autoComplete="street-address"
-          className="h-12 border border-neutral-300 px-4 outline-none focus:border-neutral-950 sm:col-span-2"
+          className="sm:col-span-2"
         />
 
-        <input
+        <Input
           required
           value={
             values.city
@@ -137,10 +139,9 @@ export function ShippingForm({
           }
           placeholder="City"
           autoComplete="address-level2"
-          className="h-12 border border-neutral-300 px-4 outline-none focus:border-neutral-950"
         />
 
-        <input
+        <Input
           value={
             values.postalCode
           }
@@ -154,7 +155,6 @@ export function ShippingForm({
           }
           placeholder="Postal code"
           autoComplete="postal-code"
-          className="h-12 border border-neutral-300 px-4 outline-none focus:border-neutral-950"
         />
       </div>
     </div>

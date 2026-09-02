@@ -2,15 +2,24 @@
 
 import {
   Heart,
+  LogIn,
   Menu,
   Search,
   ShoppingBag,
   User,
+  UserPlus,
   X,
 } from "lucide-react";
 
 import Link from "next/link";
-import { useState } from "react";
+
+import {
+  useState,
+} from "react";
+
+import {
+  useAuth,
+} from "@/components/providers/auth-provider";
 
 import {
   useCart,
@@ -26,17 +35,19 @@ export function Navbar() {
     totalItems,
   } = useCart();
 
+  const {
+    initialized,
+    authenticated,
+  } = useAuth();
+
   return (
     <>
-      {/* Announcement Bar */}
       <div className="bg-neutral-950 px-4 py-2 text-center text-xs text-white sm:text-sm">
         Free shipping on orders over Rs. 10,000
       </div>
 
-      {/* Navbar */}
       <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Mobile Menu Button */}
           <button
             type="button"
             onClick={() =>
@@ -44,13 +55,14 @@ export function Navbar() {
                 true
               )
             }
-            className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100 lg:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950 lg:hidden"
             aria-label="Open menu"
           >
-            <Menu size={21} />
+            <Menu
+              size={21}
+            />
           </button>
 
-          {/* Logo */}
           <Link
             href="/"
             className="font-display text-xl font-bold tracking-[0.15em] sm:text-2xl"
@@ -58,79 +70,94 @@ export function Navbar() {
             MODEVA
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden items-center gap-8 lg:flex">
-            <Link
+            <DesktopNavLink
               href="/"
-              className="text-sm font-medium text-neutral-700 transition hover:text-black"
-            >
-              Home
-            </Link>
+              label="Home"
+            />
 
-            <Link
+            <DesktopNavLink
               href="/shop"
-              className="text-sm font-medium text-neutral-700 transition hover:text-black"
-            >
-              Shop
-            </Link>
+              label="Shop"
+            />
 
-            <Link
+            <DesktopNavLink
               href="/shop?category=men"
-              className="text-sm font-medium text-neutral-700 transition hover:text-black"
-            >
-              Men
-            </Link>
+              label="Men"
+            />
 
-            <Link
+            <DesktopNavLink
               href="/shop?category=women"
-              className="text-sm font-medium text-neutral-700 transition hover:text-black"
-            >
-              Women
-            </Link>
+              label="Women"
+            />
 
-            <Link
+            <DesktopNavLink
               href="/shop?sort=newest"
-              className="text-sm font-medium text-neutral-700 transition hover:text-black"
-            >
-              New Arrivals
-            </Link>
+              label="New Arrivals"
+            />
           </nav>
 
-          {/* Actions */}
           <div className="flex items-center gap-1 sm:gap-2">
-            <Link
+            <IconLink
               href="/search"
-              className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100"
-              aria-label="Search"
+              label="Search"
             >
               <Search
                 size={20}
               />
-            </Link>
+            </IconLink>
 
-            <Link
-              href="/wishlist"
-              className="hidden h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100 sm:flex"
-              aria-label="Wishlist"
-            >
-              <Heart
-                size={20}
-              />
-            </Link>
+            <div className="hidden sm:block">
+              <IconLink
+                href="/wishlist"
+                label="Wishlist"
+              >
+                <Heart
+                  size={20}
+                />
+              </IconLink>
+            </div>
 
-            <Link
-              href="/account"
-              className="hidden h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100 sm:flex"
-              aria-label="Account"
-            >
-              <User
-                size={20}
-              />
-            </Link>
+            {initialized &&
+              authenticated && (
+                <div className="hidden sm:block">
+                  <IconLink
+                    href="/account"
+                    label="My Account"
+                  >
+                    <User
+                      size={20}
+                    />
+                  </IconLink>
+                </div>
+              )}
+
+            {initialized &&
+              !authenticated && (
+                <div className="hidden items-center gap-2 md:flex">
+                  <Link
+                    href="/login"
+                    className="inline-flex h-10 items-center justify-center gap-2 px-3 text-sm font-medium text-neutral-700 transition hover:text-neutral-950"
+                  >
+                    <LogIn
+                      size={17}
+                    />
+
+                    Login
+                  </Link>
+
+                  <Link
+                    href="/register"
+                    className="inline-flex h-10 items-center justify-center bg-[#a26b42] px-4 text-sm font-medium text-white transition hover:bg-[#8f5d39] hover:text-white"
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
 
             <Link
               href="/cart"
-              className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950"
               aria-label={`Cart with ${totalItems} items`}
             >
               <ShoppingBag
@@ -138,9 +165,8 @@ export function Navbar() {
               />
 
               {totalItems > 0 && (
-                <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-black px-1 text-[10px] font-semibold text-white">
-                  {totalItems >
-                  99
+                <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-neutral-950 px-1 text-[10px] font-semibold text-white">
+                  {totalItems > 99
                     ? "99+"
                     : totalItems}
                 </span>
@@ -150,10 +176,8 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-[100] lg:hidden">
-          {/* Overlay */}
           <button
             type="button"
             className="absolute inset-0 bg-black/40"
@@ -165,7 +189,6 @@ export function Navbar() {
             aria-label="Close menu"
           />
 
-          {/* Drawer */}
           <div className="relative h-full w-[85%] max-w-sm overflow-y-auto bg-white px-6 py-6 shadow-xl">
             <div className="flex items-center justify-between">
               <Link
@@ -187,7 +210,7 @@ export function Navbar() {
                     false
                   )
                 }
-                className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950"
                 aria-label="Close menu"
               >
                 <X
@@ -249,21 +272,61 @@ export function Navbar() {
             </nav>
 
             <div className="mt-8 border-t border-neutral-200 pt-6">
-              <Link
-                href="/account"
-                onClick={() =>
-                  setMobileMenuOpen(
-                    false
-                  )
-                }
-                className="flex items-center gap-3 py-3 text-sm font-medium"
-              >
-                <User
-                  size={19}
-                />
+              {initialized &&
+                authenticated && (
+                  <Link
+                    href="/account"
+                    onClick={() =>
+                      setMobileMenuOpen(
+                        false
+                      )
+                    }
+                    className="flex items-center gap-3 py-3 text-sm font-medium text-neutral-700 transition hover:text-neutral-950"
+                  >
+                    <User
+                      size={19}
+                    />
 
-                My Account
-              </Link>
+                    My Account
+                  </Link>
+                )}
+
+              {initialized &&
+                !authenticated && (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() =>
+                        setMobileMenuOpen(
+                          false
+                        )
+                      }
+                      className="flex items-center gap-3 py-3 text-sm font-medium text-neutral-700 transition hover:text-neutral-950"
+                    >
+                      <LogIn
+                        size={19}
+                      />
+
+                      Login
+                    </Link>
+
+                    <Link
+                      href="/register"
+                      onClick={() =>
+                        setMobileMenuOpen(
+                          false
+                        )
+                      }
+                      className="flex items-center gap-3 py-3 text-sm font-medium text-neutral-700 transition hover:text-neutral-950"
+                    >
+                      <UserPlus
+                        size={19}
+                      />
+
+                      Register
+                    </Link>
+                  </>
+                )}
 
               <Link
                 href="/wishlist"
@@ -272,7 +335,7 @@ export function Navbar() {
                     false
                   )
                 }
-                className="flex items-center gap-3 py-3 text-sm font-medium"
+                className="flex items-center gap-3 py-3 text-sm font-medium text-neutral-700 transition hover:text-neutral-950"
               >
                 <Heart
                   size={19}
@@ -288,7 +351,7 @@ export function Navbar() {
                     false
                   )
                 }
-                className="flex items-center justify-between py-3 text-sm font-medium"
+                className="flex items-center justify-between py-3 text-sm font-medium text-neutral-700 transition hover:text-neutral-950"
               >
                 <span className="flex items-center gap-3">
                   <ShoppingBag
@@ -316,6 +379,44 @@ export function Navbar() {
   );
 }
 
+function DesktopNavLink({
+  href,
+  label,
+}: {
+  href: string;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="text-sm font-medium text-neutral-700 transition hover:text-neutral-950"
+    >
+      {label}
+    </Link>
+  );
+}
+
+function IconLink({
+  href,
+  label,
+  children,
+}: {
+  href: string;
+  label: string;
+  children:
+    React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950"
+      aria-label={label}
+    >
+      {children}
+    </Link>
+  );
+}
+
 function MobileNavLink({
   href,
   label,
@@ -329,7 +430,7 @@ function MobileNavLink({
     <Link
       href={href}
       onClick={onClick}
-      className="border-b border-neutral-100 py-4 text-lg font-medium"
+      className="border-b border-neutral-100 py-4 text-lg font-medium text-neutral-700 transition hover:text-neutral-950"
     >
       {label}
     </Link>

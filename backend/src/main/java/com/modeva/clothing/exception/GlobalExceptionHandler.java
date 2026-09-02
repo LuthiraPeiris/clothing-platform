@@ -189,4 +189,41 @@ public ResponseEntity<Map<String, Object>> handleOrderNotFound(
             .status(HttpStatus.NOT_FOUND)
             .body(response);
 }
+
+@ExceptionHandler(
+        CustomerNotFoundException.class
+)
+public ResponseEntity<
+        Map<String, Object>
+        > handleCustomerNotFound(
+        CustomerNotFoundException exception
+) {
+
+    Map<String, Object> response =
+            new HashMap<>();
+
+    response.put(
+            "timestamp",
+            LocalDateTime.now()
+    );
+
+    response.put(
+            "status",
+            HttpStatus.NOT_FOUND.value()
+    );
+
+    response.put(
+            "error",
+            "Not Found"
+    );
+
+    response.put(
+            "message",
+            exception.getMessage()
+    );
+
+    return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(response);
+}
 }

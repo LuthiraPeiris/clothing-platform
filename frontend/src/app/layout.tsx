@@ -10,6 +10,10 @@ import {
 import "./globals.css";
 
 import {
+  AuthProvider,
+} from "@/components/providers/auth-provider";
+
+import {
   CartProvider,
 } from "@/context/cart-context";
 
@@ -48,11 +52,13 @@ export default function RootLayout({
       className={`${inter.variable} ${dmSans.variable}`}
     >
       <body>
-        <WishlistProvider>
-          <CartProvider>
-            {children}
-          </CartProvider>
-        </WishlistProvider>
+        <AuthProvider>
+          <WishlistProvider>
+            <CartProvider>
+              {children}
+            </CartProvider>
+          </WishlistProvider>
+        </AuthProvider>
       </body>
     </html>
   );

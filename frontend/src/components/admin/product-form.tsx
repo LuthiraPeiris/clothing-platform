@@ -14,6 +14,18 @@ import {
 } from "react";
 
 import {
+  Button,
+} from "@/components/ui/button";
+
+import {
+  Input,
+} from "@/components/ui/input";
+
+import {
+  Select,
+} from "@/components/ui/select";
+
+import {
   createProduct,
   updateProduct,
 } from "@/services/product-service";
@@ -132,7 +144,9 @@ export function ProductForm({
     setError(null);
 
     const price =
-      Number(form.price);
+      Number(
+        form.price
+      );
 
     const oldPrice =
       form.oldPrice.trim()
@@ -153,7 +167,9 @@ export function ProductForm({
     }
 
     if (
-      Number.isNaN(price) ||
+      Number.isNaN(
+        price
+      ) ||
       price <= 0
     ) {
       setError(
@@ -179,8 +195,8 @@ export function ProductForm({
       return;
     }
 
-    const request: ProductRequest =
-      {
+    const request:
+      ProductRequest = {
         name:
           form.name.trim(),
 
@@ -274,7 +290,7 @@ export function ProductForm({
                 Product Name
               </label>
 
-              <input
+              <Input
                 required
                 value={
                   form.name
@@ -284,12 +300,10 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "name",
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="Classic Linen Shirt"
-                className="h-12 w-full border border-neutral-300 px-4 text-sm outline-none focus:border-neutral-950"
               />
             </div>
 
@@ -298,7 +312,7 @@ export function ProductForm({
                 Slug
               </label>
 
-              <input
+              <Input
                 required
                 value={
                   form.slug
@@ -308,12 +322,10 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "slug",
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="classic-linen-shirt"
-                className="h-12 w-full border border-neutral-300 px-4 text-sm outline-none focus:border-neutral-950"
               />
             </div>
 
@@ -322,7 +334,7 @@ export function ProductForm({
                 Category
               </label>
 
-              <select
+              <Select
                 value={
                   form.category
                 }
@@ -331,11 +343,9 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "category",
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
-                className="h-12 w-full border border-neutral-300 bg-white px-4 text-sm outline-none focus:border-neutral-950"
               >
                 <option value="men">
                   Men
@@ -348,7 +358,7 @@ export function ProductForm({
                 <option value="accessories">
                   Accessories
                 </option>
-              </select>
+              </Select>
             </div>
 
             <div>
@@ -356,7 +366,7 @@ export function ProductForm({
                 Badge
               </label>
 
-              <input
+              <Input
                 value={
                   form.badge
                 }
@@ -365,12 +375,10 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "badge",
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="New / Sale"
-                className="h-12 w-full border border-neutral-300 px-4 text-sm outline-none focus:border-neutral-950"
               />
             </div>
 
@@ -379,7 +387,7 @@ export function ProductForm({
                 Price
               </label>
 
-              <input
+              <Input
                 required
                 min="0"
                 step="0.01"
@@ -392,12 +400,10 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "price",
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="6500"
-                className="h-12 w-full border border-neutral-300 px-4 text-sm outline-none focus:border-neutral-950"
               />
             </div>
 
@@ -406,7 +412,7 @@ export function ProductForm({
                 Old Price
               </label>
 
-              <input
+              <Input
                 min="0"
                 step="0.01"
                 type="number"
@@ -418,12 +424,10 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "oldPrice",
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="7500"
-                className="h-12 w-full border border-neutral-300 px-4 text-sm outline-none focus:border-neutral-950"
               />
             </div>
 
@@ -441,12 +445,11 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "description",
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 rows={5}
-                className="w-full resize-none border border-neutral-300 p-4 text-sm outline-none focus:border-neutral-950"
+                className="w-full resize-none border border-neutral-300 bg-white p-4 text-sm text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950"
               />
 
               <p className="mt-2 text-xs text-neutral-500">
@@ -470,7 +473,7 @@ export function ProductForm({
                 Sizes
               </label>
 
-              <input
+              <Input
                 value={
                   form.sizes
                 }
@@ -479,12 +482,10 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "sizes",
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="S, M, L, XL"
-                className="h-12 w-full border border-neutral-300 px-4 text-sm outline-none focus:border-neutral-950"
               />
 
               <p className="mt-2 text-xs text-neutral-500">
@@ -498,7 +499,7 @@ export function ProductForm({
                 Colors
               </label>
 
-              <input
+              <Input
                 value={
                   form.colors
                 }
@@ -507,12 +508,10 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "colors",
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="White, Black, Beige"
-                className="h-12 w-full border border-neutral-300 px-4 text-sm outline-none focus:border-neutral-950"
               />
 
               <p className="mt-2 text-xs text-neutral-500">
@@ -548,7 +547,7 @@ export function ProductForm({
             </div>
           </div>
 
-          <input
+          <Input
             value={
               form.image
             }
@@ -557,12 +556,11 @@ export function ProductForm({
             ) =>
               updateField(
                 "image",
-                event.target
-                  .value
+                event.target.value
               )
             }
             placeholder="/images/products/example.jpg"
-            className="mt-4 h-11 w-full border border-neutral-300 px-3 text-sm outline-none focus:border-neutral-950"
+            className="mt-4 h-11"
           />
         </section>
 
@@ -583,10 +581,10 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "featured",
-                    event.target
-                      .checked
+                    event.target.checked
                   )
                 }
+                className="h-4 w-4 accent-neutral-950"
               />
 
               Featured product
@@ -603,10 +601,10 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "newArrival",
-                    event.target
-                      .checked
+                    event.target.checked
                   )
                 }
+                className="h-4 w-4 accent-neutral-950"
               />
 
               New arrival
@@ -620,12 +618,12 @@ export function ProductForm({
           </div>
         )}
 
-        <button
+        <Button
           type="submit"
+          fullWidth
           disabled={
             isSubmitting
           }
-          className="flex h-12 w-full items-center justify-center gap-2 bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Save
             size={17}
@@ -638,7 +636,7 @@ export function ProductForm({
             : product
               ? "Update Product"
               : "Create Product"}
-        </button>
+        </Button>
       </div>
     </form>
   );

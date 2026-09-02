@@ -9,6 +9,10 @@ import {
 } from "react";
 
 import {
+  Button,
+} from "@/components/ui/button";
+
+import {
   useCart,
 } from "@/hooks/use-cart";
 
@@ -113,11 +117,6 @@ export function CheckoutForm() {
       return;
     }
 
-    /*
-     * We currently support COD in the UI.
-     * Online payment processing will be
-     * integrated later.
-     */
     if (
       paymentMethod !== "cod"
     ) {
@@ -224,18 +223,20 @@ export function CheckoutForm() {
           </div>
         )}
 
-        <button
+        <Button
           type="submit"
+          size="lg"
+          fullWidth
           disabled={
             isSubmitting ||
             items.length === 0
           }
-          className="flex h-14 w-full items-center justify-center bg-neutral-950 px-6 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-14"
         >
           {isSubmitting
             ? "Placing Order..."
             : "Place Order"}
-        </button>
+        </Button>
       </div>
 
       <div className="lg:sticky lg:top-28">

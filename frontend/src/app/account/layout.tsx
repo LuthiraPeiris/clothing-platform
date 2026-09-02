@@ -1,12 +1,73 @@
+"use client";
+
+import type {
+  ReactNode,
+} from "react";
+
+import {
+  useEffect,
+} from "react";
+
+import {
+  useRouter,
+} from "next/navigation";
+
 import {
   AccountSidebar,
 } from "@/components/layout/account-sidebar";
 
+import {
+  useAuth,
+} from "@/components/providers/auth-provider";
+
 export default function AccountLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
+  const router =
+    useRouter();
+
+  const {
+    initialized,
+    authenticated,
+  } = useAuth();
+
+  useEffect(() => {
+    if (
+      initialized &&
+      !authenticated
+    ) {
+      router.replace(
+        "/login"
+      );
+    }
+  }, [
+    initialized,
+    authenticated,
+    router,
+  ]);
+
+  if (!initialized) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#faf9f7]">
+        <p className="text-sm text-neutral-500">
+          Loading account...
+        </p>
+      </main>
+    );
+  }
+
+  if (!authenticated) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#faf9f7]">
+        <p className="text-sm text-neutral-500">
+          Redirecting to login...
+        </p>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#faf9f7]">
       <section className="border-b border-neutral-200 bg-white">
