@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  Check,
   Mail,
   MoreHorizontal,
   Search,
+  UserX,
 } from "lucide-react";
 
 import {
@@ -12,19 +14,65 @@ import {
 } from "react";
 
 import {
-  customers,
-} from "@/data/customers";
-
-import {
   formatCurrency,
 } from "@/lib/formatters";
 
-export function CustomersTable() {
-  const [query, setQuery] =
-    useState("");
+import {
+  updateCustomerStatus,
+} from "@/services/customer-service";
 
-  const [status, setStatus] =
-    useState("all");
+import type {
+  CustomerResponse,
+  CustomerStatus,
+} from "@/services/customer-service";
+
+type CustomersTableProps = {
+  initialCustomers:
+    CustomerResponse[];
+};
+
+export function CustomersTable({
+  initialCustomers,
+}: CustomersTableProps) {
+  const [
+    customers,
+    setCustomers,
+  ] = useState(
+    initialCustomers
+  );
+
+  const [
+    query,
+    setQuery,
+  ] = useState("");
+
+  const [
+    status,
+    setStatus,
+  ] = useState<
+    "ALL" | CustomerStatus
+  >("ALL");
+
+  const [
+    openMenuId,
+    setOpenMenuId,
+  ] = useState<
+    number | null
+  >(null);
+
+  const [
+    updatingId,
+    setUpdatingId,
+  ] = useState<
+    number | null
+  >(null);
+
+  const [
+    error,
+    setError,
+  ] = useState<
+    string | null
+  >(null);
 
   const filteredCustomers =
     useMemo(() => {
@@ -54,7 +102,7 @@ export function CustomersTable() {
               );
 
           const matchesStatus =
-            status === "all" ||
+            status === "ALL" ||
             customer.status ===
               status;
 
@@ -64,7 +112,61 @@ export function CustomersTable() {
           );
         }
       );
-    }, [query, status]);
+    }, [
+      customers,
+      query,
+      status,
+    ]);
+
+  async function handleStatusChange(
+    customer: CustomerResponse
+  ) {
+    const newStatus:
+      CustomerStatus =
+        customer.status ===
+        "ACTIVE"
+          ? "INACTIVE"
+          : "ACTIVE";
+
+    try {
+      setError(null);
+
+      setUpdatingId(
+        customer.id
+      );
+
+      setOpenMenuId(
+        null
+      );
+
+      const updatedCustomer =
+        await updateCustomerStatus(
+          customer.id,
+          newStatus
+        );
+
+      setCustomers(
+        (current) =>
+          current.map(
+            (item) =>
+              item.id ===
+              updatedCustomer.id
+                ? updatedCustomer
+                : item
+          )
+      );
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update customer status."
+      );
+    } finally {
+      setUpdatingId(
+        null
+      );
+    }
+  }
 
   return (
     <div className="border border-neutral-200 bg-white">
@@ -110,25 +212,33 @@ export function CustomersTable() {
             ) =>
               setStatus(
                 event.target
-                  .value
+                  .value as
+                  | "ALL"
+                  | CustomerStatus
               )
             }
             className="h-10 border border-neutral-300 bg-white px-3 text-sm outline-none focus:border-neutral-950"
           >
-            <option value="all">
+            <option value="ALL">
               All customers
             </option>
 
-            <option value="active">
+            <option value="ACTIVE">
               Active
             </option>
 
-            <option value="inactive">
+            <option value="INACTIVE">
               Inactive
             </option>
           </select>
         </div>
       </div>
+
+      {error && (
+        <div className="border-b border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[950px] text-left">
@@ -166,105 +276,169 @@ export function CustomersTable() {
 
           <tbody className="divide-y divide-neutral-100">
             {filteredCustomers.map(
-              (customer) => (
-                <tr
-                  key={
-                    customer.id
-                  }
-                  className="text-sm"
-                >
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-950 text-sm font-semibold text-white">
-                        {customer.name
-                          .split(" ")
-                          .map(
-                            (part) =>
-                              part[0]
-                          )
-                          .join("")
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </div>
+              (customer) => {
+                const isUpdating =
+                  updatingId ===
+                  customer.id;
 
-                      <div>
-                        <p className="font-medium text-neutral-950">
-                          {
-                            customer.name
-                          }
-                        </p>
+                const isMenuOpen =
+                  openMenuId ===
+                  customer.id;
 
-                        <div className="mt-1 flex items-center gap-1.5 text-xs text-neutral-500">
-                          <Mail
-                            size={
-                              12
+                return (
+                  <tr
+                    key={
+                      customer.id
+                    }
+                    className="text-sm"
+                  >
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-950 text-sm font-semibold text-white">
+                          {customer.name
+                            .split(" ")
+                            .map(
+                              (part) =>
+                                part[0]
+                            )
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase()}
+                        </div>
+
+                        <div>
+                          <p className="font-medium text-neutral-950">
+                            {
+                              customer.name
                             }
-                          />
+                          </p>
 
-                          {
-                            customer.email
-                          }
+                          <div className="mt-1 flex items-center gap-1.5 text-xs text-neutral-500">
+                            <Mail
+                              size={
+                                12
+                              }
+                            />
+
+                            {
+                              customer.email
+                            }
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  <td className="px-5 py-4 text-neutral-500">
-                    {
-                      customer.phone
-                    }
-                  </td>
-
-                  <td className="px-5 py-4">
-                    {
-                      customer.orders
-                    }
-                  </td>
-
-                  <td className="px-5 py-4 font-medium">
-                    {formatCurrency(
-                      customer.totalSpent
-                    )}
-                  </td>
-
-                  <td className="px-5 py-4 text-neutral-500">
-                    {
-                      customer.joinedAt
-                    }
-                  </td>
-
-                  <td className="px-5 py-4">
-                    <span
-                      className={`inline-flex px-3 py-1 text-xs font-medium capitalize ${
-                        customer.status ===
-                        "active"
-                          ? "bg-green-50 text-green-700"
-                          : "bg-neutral-100 text-neutral-500"
-                      }`}
-                    >
+                    <td className="px-5 py-4 text-neutral-500">
                       {
-                        customer.status
+                        customer.phone
                       }
-                    </span>
-                  </td>
+                    </td>
 
-                  <td className="px-5 py-4">
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        className="flex h-9 w-9 items-center justify-center text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-950"
-                        aria-label="Customer actions"
+                    <td className="px-5 py-4">
+                      {
+                        customer.orders
+                      }
+                    </td>
+
+                    <td className="px-5 py-4 font-medium">
+                      {formatCurrency(
+                        customer.totalSpent
+                      )}
+                    </td>
+
+                    <td className="px-5 py-4 text-neutral-500">
+                      {formatJoinedDate(
+                        customer.joinedAt
+                      )}
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <span
+                        className={`inline-flex px-3 py-1 text-xs font-medium capitalize ${
+                          customer.status ===
+                          "ACTIVE"
+                            ? "bg-green-50 text-green-700"
+                            : "bg-neutral-100 text-neutral-500"
+                        }`}
                       >
-                        <MoreHorizontal
-                          size={
-                            17
+                        {customer.status
+                          .toLowerCase()}
+                      </span>
+                    </td>
+
+                    <td className="relative px-5 py-4">
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          disabled={
+                            isUpdating
                           }
-                        />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )
+                          onClick={() =>
+                            setOpenMenuId(
+                              isMenuOpen
+                                ? null
+                                : customer.id
+                            )
+                          }
+                          className="flex h-9 w-9 items-center justify-center text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label="Customer actions"
+                        >
+                          <MoreHorizontal
+                            size={
+                              17
+                            }
+                          />
+                        </button>
+                      </div>
+
+                      {isMenuOpen && (
+                        <div className="absolute right-5 top-12 z-20 w-48 border border-neutral-200 bg-white p-1 shadow-lg">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleStatusChange(
+                                customer
+                              )
+                            }
+                            className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition hover:bg-neutral-100"
+                          >
+                            {customer.status ===
+                            "ACTIVE" ? (
+                              <>
+                                <UserX
+                                  size={
+                                    16
+                                  }
+                                  className="text-neutral-500"
+                                />
+
+                                <span>
+                                  Mark as
+                                  Inactive
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Check
+                                  size={
+                                    16
+                                  }
+                                  className="text-green-600"
+                                />
+
+                                <span>
+                                  Mark as
+                                  Active
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              }
             )}
           </tbody>
         </table>
@@ -284,5 +458,20 @@ export function CustomersTable() {
         )}
       </div>
     </div>
+  );
+}
+
+function formatJoinedDate(
+  date: string
+) {
+  return new Intl.DateTimeFormat(
+    "en-LK",
+    {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }
+  ).format(
+    new Date(date)
   );
 }

@@ -10,14 +10,17 @@ import {
 } from "@/components/admin/customers-table";
 
 import {
-  customers,
-} from "@/data/customers";
-
-import {
   formatCurrency,
 } from "@/lib/formatters";
 
-export default function AdminCustomersPage() {
+import {
+  getCustomers,
+} from "@/services/customer-service";
+
+export default async function AdminCustomersPage() {
+  const customers =
+    await getCustomers();
+
   const totalCustomers =
     customers.length;
 
@@ -25,7 +28,7 @@ export default function AdminCustomersPage() {
     customers.filter(
       (customer) =>
         customer.status ===
-        "active"
+        "ACTIVE"
     ).length;
 
   const totalOrders =
@@ -132,7 +135,11 @@ export default function AdminCustomersPage() {
       </div>
 
       <div className="mt-6">
-        <CustomersTable />
+        <CustomersTable
+          initialCustomers={
+            customers
+          }
+        />
       </div>
     </div>
   );

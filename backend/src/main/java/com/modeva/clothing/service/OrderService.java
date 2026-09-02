@@ -30,6 +30,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
+    private final CustomerService customerService;
 
     private static final BigDecimal SHIPPING_FEE =
             new BigDecimal("500.00");
@@ -43,33 +44,44 @@ public class OrderService {
                 .toList();
     }
 
-    public OrderResponse getOrderById(Long id) {
+    public OrderResponse getOrderById(
+            Long id
+    ) {
 
-        Order order = orderRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new OrderNotFoundException(
-                                "Order not found with id: " + id
-                        )
-                );
+        Order order =
+                orderRepository
+                        .findById(id)
+                        .orElseThrow(() ->
+                                new OrderNotFoundException(
+                                        "Order not found with id: "
+                                                + id
+                                )
+                        );
 
-        return mapToResponse(order);
+        return mapToResponse(
+                order
+        );
     }
 
     public OrderResponse getOrderByOrderNumber(
             String orderNumber
     ) {
 
-        Order order = orderRepository
-                .findByOrderNumber(orderNumber)
-                .orElseThrow(() ->
-                        new OrderNotFoundException(
-                                "Order not found with order number: "
-                                        + orderNumber
+        Order order =
+                orderRepository
+                        .findByOrderNumber(
+                                orderNumber
                         )
-                );
+                        .orElseThrow(() ->
+                                new OrderNotFoundException(
+                                        "Order not found with order number: "
+                                                + orderNumber
+                                )
+                        );
 
-        return mapToResponse(order);
+        return mapToResponse(
+                order
+        );
     }
 
     @Transactional
@@ -77,19 +89,68 @@ public class OrderService {
             OrderRequest request
     ) {
 
-        Order order = Order.builder()
-                .orderNumber(generateOrderNumber())
-                .customerName(request.customerName())
-                .email(request.email())
-                .phone(request.phone())
-                .shippingAddress(request.shippingAddress())
-                .city(request.city())
-                .postalCode(request.postalCode())
-                .status(OrderStatus.PENDING)
-                .subtotal(BigDecimal.ZERO)
-                .shippingFee(SHIPPING_FEE)
-                .total(BigDecimal.ZERO)
-                .build();
+        /*
+         * Create a new customer if the email
+         * does not exist.
+         *
+         * If the customer already exists,
+         * update their latest name and phone.
+         */
+        customerService
+                .registerOrUpdateCustomer(
+                        request.customerName(),
+                        request.email(),
+                        request.phone()
+                );
+
+        String normalizedEmail =
+                request.email()
+                        .trim()
+                        .toLowerCase();
+
+        Order order =
+                Order.builder()
+                        .orderNumber(
+                                generateOrderNumber()
+                        )
+                        .customerName(
+                                request.customerName()
+                                        .trim()
+                        )
+                        .email(
+                                normalizedEmail
+                        )
+                        .phone(
+                                request.phone()
+                                        .trim()
+                        )
+                        .shippingAddress(
+                                request.shippingAddress()
+                                        .trim()
+                        )
+                        .city(
+                                request.city()
+                                        .trim()
+                        )
+                        .postalCode(
+                                request.postalCode() != null
+                                        ? request.postalCode()
+                                        .trim()
+                                        : null
+                        )
+                        .status(
+                                OrderStatus.PENDING
+                        )
+                        .subtotal(
+                                BigDecimal.ZERO
+                        )
+                        .shippingFee(
+                                SHIPPING_FEE
+                        )
+                        .total(
+                                BigDecimal.ZERO
+                        )
+                        .build();
 
         BigDecimal subtotal =
                 BigDecimal.ZERO;
@@ -101,7 +162,9 @@ public class OrderService {
 
             Product product =
                     productRepository
-                            .findById(itemRequest.productId())
+                            .findById(
+                                    itemRequest.productId()
+                            )
                             .orElseThrow(() ->
                                     new ProductNotFoundException(
                                             "Product not found with id: "
@@ -125,6 +188,7 @@ public class OrderService {
                     inventory.getStock()
                             < itemRequest.quantity()
             ) {
+
                 throw new IllegalArgumentException(
                         "Insufficient stock for product: "
                                 + product.getName()
@@ -146,11 +210,21 @@ public class OrderService {
 
             OrderItem orderItem =
                     OrderItem.builder()
-                            .productId(product.getId())
-                            .productName(product.getName())
-                            .productImage(product.getImage())
-                            .quantity(itemRequest.quantity())
-                            .price(product.getPrice())
+                            .productId(
+                                    product.getId()
+                            )
+                            .productName(
+                                    product.getName()
+                            )
+                            .productImage(
+                                    product.getImage()
+                            )
+                            .quantity(
+                                    itemRequest.quantity()
+                            )
+                            .price(
+                                    product.getPrice()
+                            )
                             .selectedSize(
                                     itemRequest.selectedSize()
                             )
@@ -163,6 +237,9 @@ public class OrderService {
                     orderItem
             );
 
+            /*
+             * Reduce stock.
+             */
             inventory.setStock(
                     inventory.getStock()
                             - itemRequest.quantity()
@@ -199,13 +276,15 @@ public class OrderService {
             OrderStatus status
     ) {
 
-        Order order = orderRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new OrderNotFoundException(
-                                "Order not found with id: " + id
-                        )
-                );
+        Order order =
+                orderRepository
+                        .findById(id)
+                        .orElseThrow(() ->
+                                new OrderNotFoundException(
+                                        "Order not found with id: "
+                                                + id
+                                )
+                        );
 
         order.setStatus(
                 status
@@ -226,10 +305,14 @@ public class OrderService {
         String randomPart =
                 UUID.randomUUID()
                         .toString()
-                        .substring(0, 8)
+                        .substring(
+                                0,
+                                8
+                        )
                         .toUpperCase();
 
-        return "MOD-" + randomPart;
+        return "MOD-" +
+                randomPart;
     }
 
     private OrderResponse mapToResponse(
@@ -239,17 +322,18 @@ public class OrderService {
         List<OrderItemResponse> items =
                 order.getItems()
                         .stream()
-                        .map(item ->
-                                new OrderItemResponse(
-                                        item.getId(),
-                                        item.getProductId(),
-                                        item.getProductName(),
-                                        item.getProductImage(),
-                                        item.getQuantity(),
-                                        item.getPrice(),
-                                        item.getSelectedSize(),
-                                        item.getSelectedColor()
-                                )
+                        .map(
+                                item ->
+                                        new OrderItemResponse(
+                                                item.getId(),
+                                                item.getProductId(),
+                                                item.getProductName(),
+                                                item.getProductImage(),
+                                                item.getQuantity(),
+                                                item.getPrice(),
+                                                item.getSelectedSize(),
+                                                item.getSelectedColor()
+                                        )
                         )
                         .toList();
 
