@@ -9,6 +9,14 @@ import {
 } from "react";
 
 import {
+  Button,
+} from "@/components/ui/button";
+
+import {
+  Select,
+} from "@/components/ui/select";
+
+import {
   updateOrderStatus,
 } from "@/services/order-service";
 
@@ -74,7 +82,7 @@ export function OrderStatusControl({
   return (
     <div>
       <div className="flex flex-wrap gap-3">
-        <select
+        <Select
           value={status}
           onChange={(
             event
@@ -84,7 +92,7 @@ export function OrderStatusControl({
                 .value as OrderStatus
             )
           }
-          className="h-11 border border-neutral-300 bg-white px-4 text-sm font-medium outline-none focus:border-neutral-950"
+          className="h-11 w-auto min-w-40 font-medium"
         >
           <option value="PENDING">
             Pending
@@ -109,10 +117,11 @@ export function OrderStatusControl({
           <option value="CANCELLED">
             Cancelled
           </option>
-        </select>
+        </Select>
 
-        <button
+        <Button
           type="button"
+          size="md"
           onClick={
             handleUpdate
           }
@@ -121,12 +130,11 @@ export function OrderStatusControl({
             status ===
               initialStatus
           }
-          className="h-11 bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving
             ? "Updating..."
             : "Update Status"}
-        </button>
+        </Button>
       </div>
 
       {error && (

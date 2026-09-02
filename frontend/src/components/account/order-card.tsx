@@ -6,6 +6,10 @@ import {
 import Link from "next/link";
 
 import {
+  Badge,
+} from "@/components/ui/badge";
+
+import {
   formatCurrency,
 } from "@/lib/formatters";
 
@@ -24,7 +28,8 @@ export function OrderCard({
   const totalItems =
     order.items.reduce(
       (total, item) =>
-        total + item.quantity,
+        total +
+        item.quantity,
       0
     );
 
@@ -32,7 +37,7 @@ export function OrderCard({
     <div className="border border-neutral-200 bg-white p-6">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-neutral-100">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-[#f5eee8] text-[#a26b42]">
             <Package
               size={20}
             />
@@ -40,7 +45,9 @@ export function OrderCard({
 
           <div>
             <p className="text-sm font-semibold">
-              {order.orderNumber}
+              {
+                order.orderNumber
+              }
             </p>
 
             <p className="mt-1 text-sm text-neutral-500">
@@ -61,7 +68,9 @@ export function OrderCard({
         <div className="flex items-center justify-between gap-5 sm:justify-end">
           <div className="text-right">
             <OrderStatusBadge
-              status={order.status}
+              status={
+                order.status
+              }
             />
 
             <p className="mt-2 font-semibold">
@@ -73,7 +82,7 @@ export function OrderCard({
 
           <Link
             href={`/account/orders/${order.id}`}
-            className="flex h-10 w-10 items-center justify-center border border-neutral-200 transition hover:border-neutral-950"
+            className="flex h-10 w-10 items-center justify-center border border-neutral-200 text-neutral-600 transition hover:border-[#a26b42] hover:bg-[#f8f3ef] hover:text-[#a26b42]"
             aria-label={`View order ${order.orderNumber}`}
           >
             <ChevronRight
@@ -106,32 +115,40 @@ function OrderStatusBadge({
 }: {
   status: OrderStatus;
 }) {
-  const styles: Record<
+  const variants: Record<
     OrderStatus,
-    string
+    | "neutral"
+    | "blue"
+    | "amber"
+    | "purple"
+    | "green"
+    | "red"
   > = {
     PENDING:
-      "bg-neutral-100 text-neutral-700",
+      "neutral",
 
     CONFIRMED:
-      "bg-blue-50 text-blue-700",
+      "blue",
 
     PROCESSING:
-      "bg-amber-50 text-amber-700",
+      "amber",
 
     SHIPPED:
-      "bg-purple-50 text-purple-700",
+      "purple",
 
     DELIVERED:
-      "bg-green-50 text-green-700",
+      "green",
 
     CANCELLED:
-      "bg-red-50 text-red-700",
+      "red",
   };
 
   return (
-    <span
-      className={`inline-flex px-3 py-1 text-xs font-medium capitalize ${styles[status]}`}
+    <Badge
+      variant={
+        variants[status]
+      }
+      className="capitalize"
     >
       {status
         .toLowerCase()
@@ -139,6 +156,6 @@ function OrderStatusBadge({
           "_",
           " "
         )}
-    </span>
+    </Badge>
   );
 }

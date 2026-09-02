@@ -1,9 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useState,
+} from "react";
+
+import {
+  Button,
+} from "@/components/ui/button";
+
+import {
+  Input,
+} from "@/components/ui/input";
 
 export function ProfileForm() {
-  const [form, setForm] = useState({
+  const [
+    form,
+    setForm,
+  ] = useState({
     firstName: "Luthira",
     lastName: "Peiris",
     email: "luthira@example.com",
@@ -14,10 +27,12 @@ export function ProfileForm() {
     field: keyof typeof form,
     value: string
   ) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
+    setForm(
+      (current) => ({
+        ...current,
+        [field]: value,
+      })
+    );
   }
 
   function handleSubmit(
@@ -28,7 +43,9 @@ export function ProfileForm() {
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={
+        handleSubmit
+      }
       className="border border-neutral-200 bg-white p-6 sm:p-8"
     >
       <div>
@@ -55,16 +72,19 @@ export function ProfileForm() {
             First Name
           </label>
 
-          <input
+          <Input
             id="firstName"
-            value={form.firstName}
-            onChange={(event) =>
+            value={
+              form.firstName
+            }
+            onChange={(
+              event
+            ) =>
               updateField(
                 "firstName",
                 event.target.value
               )
             }
-            className="h-12 w-full border border-neutral-300 px-4 text-sm outline-none transition focus:border-neutral-950"
           />
         </div>
 
@@ -76,16 +96,19 @@ export function ProfileForm() {
             Last Name
           </label>
 
-          <input
+          <Input
             id="lastName"
-            value={form.lastName}
-            onChange={(event) =>
+            value={
+              form.lastName
+            }
+            onChange={(
+              event
+            ) =>
               updateField(
                 "lastName",
                 event.target.value
               )
             }
-            className="h-12 w-full border border-neutral-300 px-4 text-sm outline-none transition focus:border-neutral-950"
           />
         </div>
 
@@ -97,17 +120,20 @@ export function ProfileForm() {
             Email
           </label>
 
-          <input
+          <Input
             id="email"
             type="email"
-            value={form.email}
-            onChange={(event) =>
+            value={
+              form.email
+            }
+            onChange={(
+              event
+            ) =>
               updateField(
                 "email",
                 event.target.value
               )
             }
-            className="h-12 w-full border border-neutral-300 px-4 text-sm outline-none transition focus:border-neutral-950"
           />
         </div>
 
@@ -119,27 +145,32 @@ export function ProfileForm() {
             Phone Number
           </label>
 
-          <input
+          <Input
             id="phone"
-            value={form.phone}
-            onChange={(event) =>
+            type="tel"
+            value={
+              form.phone
+            }
+            onChange={(
+              event
+            ) =>
               updateField(
                 "phone",
                 event.target.value
               )
             }
-            className="h-12 w-full border border-neutral-300 px-4 text-sm outline-none transition focus:border-neutral-950"
           />
         </div>
       </div>
 
       <div className="mt-7 flex justify-end">
-        <button
+        <Button
           type="submit"
-          className="h-12 bg-neutral-950 px-7 text-sm font-medium text-white transition hover:bg-neutral-800"
+          size="lg"
+          className="px-7"
         >
           Save Changes
-        </button>
+        </Button>
       </div>
     </form>
   );

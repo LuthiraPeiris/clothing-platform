@@ -14,6 +14,26 @@ import {
 } from "react";
 
 import {
+  Badge,
+} from "@/components/ui/badge";
+
+import {
+  Button,
+} from "@/components/ui/button";
+
+import {
+  EmptyState,
+} from "@/components/ui/empty-state";
+
+import {
+  Input,
+} from "@/components/ui/input";
+
+import {
+  Select,
+} from "@/components/ui/select";
+
+import {
   formatCurrency,
 } from "@/lib/formatters";
 
@@ -186,38 +206,36 @@ export function CustomersTable({
           <div className="relative">
             <Search
               size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+              className="absolute left-3 top-1/2 z-10 -translate-y-1/2 text-neutral-400"
             />
 
-            <input
+            <Input
               type="search"
               value={query}
               onChange={(
                 event
               ) =>
                 setQuery(
-                  event.target
-                    .value
+                  event.target.value
                 )
               }
               placeholder="Search customers..."
-              className="h-10 w-full border border-neutral-300 pl-9 pr-3 text-sm outline-none focus:border-neutral-950 sm:w-64"
+              className="h-10 pl-9 sm:w-64"
             />
           </div>
 
-          <select
+          <Select
             value={status}
             onChange={(
               event
             ) =>
               setStatus(
-                event.target
-                  .value as
+                event.target.value as
                   | "ALL"
                   | CustomerStatus
               )
             }
-            className="h-10 border border-neutral-300 bg-white px-3 text-sm outline-none focus:border-neutral-950"
+            className="h-10 sm:w-44"
           >
             <option value="ALL">
               All customers
@@ -230,7 +248,7 @@ export function CustomersTable({
             <option value="INACTIVE">
               Inactive
             </option>
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -315,9 +333,7 @@ export function CustomersTable({
 
                           <div className="mt-1 flex items-center gap-1.5 text-xs text-neutral-500">
                             <Mail
-                              size={
-                                12
-                              }
+                              size={12}
                             />
 
                             {
@@ -353,23 +369,25 @@ export function CustomersTable({
                     </td>
 
                     <td className="px-5 py-4">
-                      <span
-                        className={`inline-flex px-3 py-1 text-xs font-medium capitalize ${
+                      <Badge
+                        variant={
                           customer.status ===
                           "ACTIVE"
-                            ? "bg-green-50 text-green-700"
-                            : "bg-neutral-100 text-neutral-500"
-                        }`}
+                            ? "green"
+                            : "neutral"
+                        }
+                        className="capitalize"
                       >
-                        {customer.status
-                          .toLowerCase()}
-                      </span>
+                        {customer.status.toLowerCase()}
+                      </Badge>
                     </td>
 
                     <td className="relative px-5 py-4">
                       <div className="flex justify-end">
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           disabled={
                             isUpdating
                           }
@@ -380,59 +398,54 @@ export function CustomersTable({
                                 : customer.id
                             )
                           }
-                          className="flex h-9 w-9 items-center justify-center text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-950 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="h-9 w-9 px-0 text-neutral-400"
                           aria-label="Customer actions"
                         >
                           <MoreHorizontal
-                            size={
-                              17
-                            }
+                            size={17}
                           />
-                        </button>
+                        </Button>
                       </div>
 
                       {isMenuOpen && (
                         <div className="absolute right-5 top-12 z-20 w-48 border border-neutral-200 bg-white p-1 shadow-lg">
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
+                            fullWidth
                             onClick={() =>
                               handleStatusChange(
                                 customer
                               )
                             }
-                            className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition hover:bg-neutral-100"
+                            className="h-auto justify-start px-3 py-2.5"
                           >
                             {customer.status ===
                             "ACTIVE" ? (
                               <>
                                 <UserX
-                                  size={
-                                    16
-                                  }
+                                  size={16}
                                   className="text-neutral-500"
                                 />
 
                                 <span>
-                                  Mark as
-                                  Inactive
+                                  Mark as Inactive
                                 </span>
                               </>
                             ) : (
                               <>
                                 <Check
-                                  size={
-                                    16
-                                  }
+                                  size={16}
                                   className="text-green-600"
                                 />
 
                                 <span>
-                                  Mark as
-                                  Active
+                                  Mark as Active
                                 </span>
                               </>
                             )}
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </td>
@@ -445,16 +458,11 @@ export function CustomersTable({
 
         {filteredCustomers.length ===
           0 && (
-          <div className="py-16 text-center">
-            <p className="text-sm font-medium">
-              No customers found
-            </p>
-
-            <p className="mt-1 text-xs text-neutral-500">
-              Try another search
-              or filter.
-            </p>
-          </div>
+          <EmptyState
+            title="No customers found"
+            description="Try another search or filter."
+            className="min-h-[260px] border-0"
+          />
         )}
       </div>
     </div>
