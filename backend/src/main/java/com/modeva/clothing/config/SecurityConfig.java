@@ -133,6 +133,45 @@ public class SecurityConfig {
                                                 "ADMIN"
                                         )
 
+                                        .requestMatchers(
+        HttpMethod.GET,
+        "/api/orders"
+)
+.hasRole("ADMIN")
+
+/*
+ * Customer order history and
+ * individual order reads.
+ *
+ * Ownership is checked by OrderService.
+ */
+.requestMatchers(
+        HttpMethod.GET,
+        "/api/orders/**"
+)
+.hasAnyRole(
+        "CUSTOMER",
+        "ADMIN"
+)
+
+/*
+ * Only CUSTOMER accounts place orders.
+ */
+.requestMatchers(
+        HttpMethod.POST,
+        "/api/orders"
+)
+.hasRole("CUSTOMER")
+
+/*
+ * Only ADMIN can change order state.
+ */
+.requestMatchers(
+        HttpMethod.PATCH,
+        "/api/orders/**"
+)
+.hasRole("ADMIN")
+
                                         .anyRequest()
                                         .authenticated()
                 )

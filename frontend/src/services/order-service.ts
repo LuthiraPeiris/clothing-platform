@@ -1,5 +1,6 @@
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
+  process.env
+    .NEXT_PUBLIC_API_URL ??
   "http://localhost:8080";
 
 export type OrderStatus =
@@ -69,38 +70,79 @@ async function getErrorMessage(
       return data.message;
     }
 
-    if (data?.errors) {
+    if (
+      data?.errors
+    ) {
       return Object.values(
         data.errors
       ).join(", ");
     }
   } catch {
-    // Ignore invalid JSON.
+    // Response did not contain JSON.
   }
 
-  return `Request failed with status ${response.status}`;
+  if (
+    response.status === 401
+  ) {
+    return (
+      "Your session is missing or has expired. Please sign in again."
+    );
+  }
+
+  if (
+    response.status === 403
+  ) {
+    return (
+      "You do not have permission to perform this action."
+    );
+  }
+
+  if (
+    response.status === 404
+  ) {
+    return (
+      "The requested resource could not be found."
+    );
+  }
+
+  return (
+    `Request failed with status ${response.status}`
+  );
 }
 
+/*
+ * CUSTOMER ONLY
+ */
 export async function createOrder(
-  request: CreateOrderRequest
+  request: CreateOrderRequest,
+  accessToken: string
 ): Promise<OrderResponse> {
-  const response = await fetch(
-    `${API_URL}/api/orders`,
-    {
-      method: "POST",
 
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
+  const response =
+    await fetch(
+      `${API_URL}/api/orders`,
+      {
+        method:
+          "POST",
 
-      body: JSON.stringify(
-        request
-      ),
-    }
-  );
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
 
-  if (!response.ok) {
+          "Content-Type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify(
+            request
+          ),
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -111,17 +153,33 @@ export async function createOrder(
   return response.json();
 }
 
-export async function getOrders(): Promise<
-  OrderResponse[]
-> {
-  const response = await fetch(
-    `${API_URL}/api/orders`,
-    {
-      cache: "no-store",
-    }
-  );
+/*
+ * CUSTOMER ONLY
+ *
+ * Gets only the orders belonging
+ * to the authenticated user.
+ */
+export async function getMyOrders(
+  accessToken: string
+): Promise<OrderResponse[]> {
 
-  if (!response.ok) {
+  const response =
+    await fetch(
+      `${API_URL}/api/orders/my`,
+      {
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+
+        cache:
+          "no-store",
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -132,17 +190,70 @@ export async function getOrders(): Promise<
   return response.json();
 }
 
+/*
+ * ADMIN ONLY
+ *
+ * Retrieves every customer's orders.
+ */
+export async function getOrders(
+  accessToken: string
+): Promise<OrderResponse[]> {
+
+  const response =
+    await fetch(
+      `${API_URL}/api/orders`,
+      {
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+
+        cache:
+          "no-store",
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
+    throw new Error(
+      await getErrorMessage(
+        response
+      )
+    );
+  }
+
+  return response.json();
+}
+
+/*
+ * CUSTOMER / ADMIN
+ *
+ * Backend performs ownership
+ * validation for CUSTOMER.
+ */
 export async function getOrderById(
-  id: string
+  id: string,
+  accessToken: string
 ): Promise<OrderResponse> {
-  const response = await fetch(
-    `${API_URL}/api/orders/${id}`,
-    {
-      cache: "no-store",
-    }
-  );
 
-  if (!response.ok) {
+  const response =
+    await fetch(
+      `${API_URL}/api/orders/${id}`,
+      {
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+
+        cache:
+          "no-store",
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -153,17 +264,33 @@ export async function getOrderById(
   return response.json();
 }
 
+/*
+ * CUSTOMER / ADMIN
+ */
 export async function getOrderByNumber(
-  orderNumber: string
+  orderNumber: string,
+  accessToken: string
 ): Promise<OrderResponse> {
-  const response = await fetch(
-    `${API_URL}/api/orders/number/${orderNumber}`,
-    {
-      cache: "no-store",
-    }
-  );
 
-  if (!response.ok) {
+  const response =
+    await fetch(
+      `${API_URL}/api/orders/number/${encodeURIComponent(
+        orderNumber
+      )}`,
+      {
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+
+        cache:
+          "no-store",
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -174,27 +301,40 @@ export async function getOrderByNumber(
   return response.json();
 }
 
+/*
+ * ADMIN ONLY
+ */
 export async function updateOrderStatus(
   id: number,
-  status: OrderStatus
+  status: OrderStatus,
+  accessToken: string
 ): Promise<OrderResponse> {
-  const response = await fetch(
-    `${API_URL}/api/orders/${id}/status`,
-    {
-      method: "PATCH",
 
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
+  const response =
+    await fetch(
+      `${API_URL}/api/orders/${id}/status`,
+      {
+        method:
+          "PATCH",
 
-      body: JSON.stringify({
-        status,
-      }),
-    }
-  );
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
 
-  if (!response.ok) {
+          "Content-Type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify({
+            status,
+          }),
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response

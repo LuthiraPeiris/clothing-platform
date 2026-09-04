@@ -4,32 +4,107 @@ const API_URL =
 
 export type InventoryItem = {
   id: number;
+
   productId: number;
+
   productName: string;
+
   productImage: string | null;
+
   category: string;
+
   sku: string;
+
   stock: number;
+
   lowStockThreshold: number;
+
   status:
     | "IN_STOCK"
     | "LOW_STOCK"
     | "OUT_OF_STOCK";
 };
 
-export async function getInventory(): Promise<
+async function getErrorMessage(
+  response: Response
+) {
+  try {
+    const data =
+      await response.json();
+
+    if (
+      typeof data?.message ===
+      "string"
+    ) {
+      return data.message;
+    }
+
+    if (
+      data?.errors
+    ) {
+      return Object.values(
+        data.errors
+      ).join(", ");
+    }
+  } catch {
+    // Ignore non-JSON responses.
+  }
+
+  if (
+    response.status === 401
+  ) {
+    return (
+      "Your session is missing or has expired. Please sign in again."
+    );
+  }
+
+  if (
+    response.status === 403
+  ) {
+    return (
+      "You do not have permission to manage inventory."
+    );
+  }
+
+  if (
+    response.status === 404
+  ) {
+    return (
+      "Inventory record not found."
+    );
+  }
+
+  return (
+    `Inventory request failed with status ${response.status}`
+  );
+}
+
+export async function getInventory(
+  accessToken: string
+): Promise<
   InventoryItem[]
 > {
-  const response = await fetch(
-    `${API_URL}/api/inventory`,
-    {
-      cache: "no-store",
-    }
-  );
+  const response =
+    await fetch(
+      `${API_URL}/api/inventory`,
+      {
+        cache:
+          "no-store",
 
-  if (!response.ok) {
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
-      `Failed to fetch inventory: ${response.status}`
+      await getErrorMessage(
+        response
+      )
     );
   }
 
@@ -38,25 +113,38 @@ export async function getInventory(): Promise<
 
 export async function increaseStock(
   productId: number,
-  amount: number
+  amount: number,
+  accessToken: string
 ): Promise<InventoryItem> {
-  const response = await fetch(
-    `${API_URL}/api/inventory/product/${productId}/increase`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-      body: JSON.stringify({
-        amount,
-      }),
-    }
-  );
+  const response =
+    await fetch(
+      `${API_URL}/api/inventory/product/${productId}/increase`,
+      {
+        method:
+          "PATCH",
 
-  if (!response.ok) {
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+
+          "Content-Type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify({
+            amount,
+          }),
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
-      `Failed to increase stock: ${response.status}`
+      await getErrorMessage(
+        response
+      )
     );
   }
 
@@ -65,25 +153,38 @@ export async function increaseStock(
 
 export async function decreaseStock(
   productId: number,
-  amount: number
+  amount: number,
+  accessToken: string
 ): Promise<InventoryItem> {
-  const response = await fetch(
-    `${API_URL}/api/inventory/product/${productId}/decrease`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-      body: JSON.stringify({
-        amount,
-      }),
-    }
-  );
+  const response =
+    await fetch(
+      `${API_URL}/api/inventory/product/${productId}/decrease`,
+      {
+        method:
+          "PATCH",
 
-  if (!response.ok) {
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+
+          "Content-Type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify({
+            amount,
+          }),
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
-      `Failed to decrease stock: ${response.status}`
+      await getErrorMessage(
+        response
+      )
     );
   }
 

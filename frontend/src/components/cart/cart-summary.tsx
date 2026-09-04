@@ -29,7 +29,9 @@ export function CartSummary({
           </span>
 
           <span>
-            {formatCurrency(subtotal)}
+            {formatCurrency(
+              subtotal
+            )}
           </span>
         </div>
 
@@ -41,7 +43,9 @@ export function CartSummary({
           <span>
             {shipping === 0
               ? "Free"
-              : formatCurrency(shipping)}
+              : formatCurrency(
+                  shipping
+                )}
           </span>
         </div>
       </div>
@@ -53,7 +57,9 @@ export function CartSummary({
           </span>
 
           <span className="text-xl font-semibold">
-            {formatCurrency(total)}
+            {formatCurrency(
+              total
+            )}
           </span>
         </div>
 
@@ -65,14 +71,14 @@ export function CartSummary({
 
       <Link
         href="/checkout"
-        className="mt-7 flex h-13 w-full items-center justify-center bg-neutral-950 px-6 text-sm font-medium text-white transition hover:bg-neutral-800"
+        className="mt-7 flex h-13 w-full items-center justify-center bg-[#a26b42] px-6 text-sm font-medium text-white transition hover:bg-[#8d5c39]"
       >
         Proceed to Checkout
       </Link>
 
       <Link
         href="/shop"
-        className="mt-3 flex h-12 w-full items-center justify-center border border-neutral-300 text-sm font-medium transition hover:border-neutral-950"
+        className="mt-3 flex h-12 w-full items-center justify-center border border-neutral-300 text-sm font-medium transition hover:border-[#a26b42] hover:text-[#a26b42]"
       >
         Continue Shopping
       </Link>

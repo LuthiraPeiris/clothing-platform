@@ -14,4 +14,5 @@ export type Product = {
   sizes?: string[];
   isFeatured?: boolean;
   isNewArrival?: boolean;
+  stock: number;
 };

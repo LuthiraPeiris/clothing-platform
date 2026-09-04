@@ -2,6 +2,7 @@
 
 import {
   ImagePlus,
+  Package,
   Save,
   Trash2,
   Upload,
@@ -151,6 +152,12 @@ export function ProductForm({
       product?.isNewArrival ??
       false,
 
+    /*
+     * Only used while creating.
+     */
+    initialStock:
+      "0",
+
     description:
       "A versatile wardrobe essential designed for everyday comfort and modern styling.",
   });
@@ -166,6 +173,7 @@ export function ProductForm({
     setForm(
       (current) => ({
         ...current,
+
         [field]:
           value,
       })
@@ -194,7 +202,9 @@ export function ProductForm({
       event.target
         .files?.[0];
 
-    if (!file) {
+    if (
+      !file
+    ) {
       return;
     }
 
@@ -239,16 +249,18 @@ export function ProductForm({
     const reader =
       new FileReader();
 
-    reader.onload = () => {
-      if (
-        typeof reader.result ===
-        "string"
-      ) {
-        setImagePreview(
-          reader.result
-        );
-      }
-    };
+    reader.onload =
+      () => {
+
+        if (
+          typeof reader.result ===
+          "string"
+        ) {
+          setImagePreview(
+            reader.result
+          );
+        }
+      };
 
     reader.readAsDataURL(
       file
@@ -302,6 +314,11 @@ export function ProductForm({
           )
         : null;
 
+    const initialStock =
+      Number(
+        form.initialStock
+      );
+
     if (
       !form.name
         .trim() ||
@@ -345,30 +362,43 @@ export function ProductForm({
       return;
     }
 
+    /*
+     * Validate stock only when
+     * creating a new product.
+     */
+    if (
+      !product &&
+      (
+        Number.isNaN(
+          initialStock
+        ) ||
+        !Number.isInteger(
+          initialStock
+        ) ||
+        initialStock < 0
+      )
+    ) {
+      setError(
+        "Initial stock must be a whole number of 0 or more."
+      );
+
+      return;
+    }
+
     try {
       setIsSubmitting(
         true
       );
 
-      /*
-       * Get an ADMIN JWT.
-       */
       const accessToken =
         await getAccessToken();
 
-      /*
-       * Existing image remains when editing,
-       * unless the admin selects a new image.
-       */
       let imageUrl:
         string | null =
         form.image
           .trim() ||
         null;
 
-      /*
-       * Upload newly selected image first.
-       */
       if (
         selectedImage
       ) {
@@ -420,6 +450,18 @@ export function ProductForm({
 
           newArrival:
             form.newArrival,
+
+          /*
+           * Only send initialStock
+           * during creation.
+           */
+          ...(
+            !product
+              ? {
+                  initialStock,
+                }
+              : {}
+          ),
         };
 
       if (
@@ -468,6 +510,7 @@ export function ProductForm({
     >
       <div className="space-y-6">
 
+        {/* Product Information */}
         <section className="border border-neutral-200 bg-white p-6">
           <h2 className="font-display text-xl font-semibold">
             Product information
@@ -490,9 +533,7 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "name",
-                    event
-                      .target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="Classic Linen Shirt"
@@ -514,9 +555,7 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "slug",
-                    event
-                      .target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="classic-linen-shirt"
@@ -537,9 +576,7 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "category",
-                    event
-                      .target
-                      .value
+                    event.target.value
                   )
                 }
               >
@@ -571,9 +608,7 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "badge",
-                    event
-                      .target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="New / Sale"
@@ -598,9 +633,7 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "price",
-                    event
-                      .target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="6500"
@@ -624,9 +657,7 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "oldPrice",
-                    event
-                      .target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="7500"
@@ -647,9 +678,7 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "description",
-                    event
-                      .target
-                      .value
+                    event.target.value
                   )
                 }
                 rows={5}
@@ -666,6 +695,7 @@ export function ProductForm({
           </div>
         </section>
 
+        {/* Variants */}
         <section className="border border-neutral-200 bg-white p-6">
           <h2 className="font-display text-xl font-semibold">
             Variants
@@ -687,9 +717,7 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "sizes",
-                    event
-                      .target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="S, M, L, XL"
@@ -714,9 +742,7 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "colors",
-                    event
-                      .target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="White, Black, Beige"
@@ -729,10 +755,66 @@ export function ProductForm({
 
           </div>
         </section>
+
+        {/* Initial Inventory */}
+        {!product && (
+          <section className="border border-neutral-200 bg-white p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center bg-[#f8f3ef] text-[#a26b42]">
+                <Package
+                  size={19}
+                />
+              </div>
+
+              <div>
+                <h2 className="font-display text-xl font-semibold">
+                  Inventory
+                </h2>
+
+                <p className="mt-1 text-xs text-neutral-500">
+                  Set the quantity available when this
+                  product is created.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 max-w-xs">
+              <label className="mb-2 block text-sm font-medium">
+                Initial Stock
+              </label>
+
+              <Input
+                required
+                type="number"
+                min="0"
+                step="1"
+                value={
+                  form.initialStock
+                }
+                onChange={(
+                  event
+                ) =>
+                  updateField(
+                    "initialStock",
+                    event.target.value
+                  )
+                }
+                placeholder="0"
+              />
+
+              <p className="mt-2 text-xs leading-5 text-neutral-500">
+                You can increase or decrease this later
+                from the Inventory page.
+              </p>
+            </div>
+          </section>
+        )}
+
       </div>
 
       <div className="space-y-6">
 
+        {/* Product Image */}
         <section className="border border-neutral-200 bg-white p-6">
           <h2 className="font-display text-lg font-semibold">
             Product image
@@ -843,6 +925,7 @@ export function ProductForm({
 
         </section>
 
+        {/* Visibility */}
         <section className="border border-neutral-200 bg-white p-6">
           <h2 className="font-display text-lg font-semibold">
             Visibility
@@ -861,9 +944,7 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "featured",
-                    event
-                      .target
-                      .checked
+                    event.target.checked
                   )
                 }
                 className="h-4 w-4 accent-[#a26b42]"
@@ -883,9 +964,7 @@ export function ProductForm({
                 ) =>
                   updateField(
                     "newArrival",
-                    event
-                      .target
-                      .checked
+                    event.target.checked
                   )
                 }
                 className="h-4 w-4 accent-[#a26b42]"

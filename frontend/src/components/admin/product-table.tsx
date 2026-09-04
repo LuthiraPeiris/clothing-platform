@@ -47,7 +47,9 @@ export function ProductTable({
   const [
     products,
     setProducts,
-  ] = useState<Product[]>(
+  ] = useState<
+    Product[]
+  >(
     initialProducts
   );
 
@@ -73,7 +75,9 @@ export function ProductTable({
         `Are you sure you want to delete "${product.name}"?`
       );
 
-    if (!confirmed) {
+    if (
+      !confirmed
+    ) {
       return;
     }
 
@@ -86,31 +90,14 @@ export function ProductTable({
         product.id
       );
 
-      /*
-       * Get a fresh Keycloak access token.
-       *
-       * This will also refresh the token
-       * automatically if it is close
-       * to expiring.
-       */
       const accessToken =
         await getAccessToken();
 
-      /*
-       * Send the JWT to Spring Boot.
-       *
-       * Spring Security will now verify
-       * that the user has ADMIN role.
-       */
       await deleteProduct(
         product.id,
         accessToken
       );
 
-      /*
-       * Remove the deleted product
-       * immediately from the table.
-       */
       setProducts(
         (current) =>
           current.filter(
@@ -120,18 +107,18 @@ export function ProductTable({
           )
       );
 
-      /*
-       * Refresh server components
-       * using this product list.
-       */
       router.refresh();
+
     } catch (error) {
+
       setError(
         error instanceof Error
           ? error.message
           : "Failed to delete product."
       );
+
     } finally {
+
       setDeletingId(
         null
       );
@@ -206,6 +193,10 @@ export function ProductTable({
                   deletingId ===
                   product.id;
 
+                const stock =
+                  product.stock ??
+                  0;
+
                 return (
                   <tr
                     key={
@@ -217,12 +208,16 @@ export function ProductTable({
                       <div className="flex items-center gap-4">
                         <div className="relative h-16 w-13 shrink-0 overflow-hidden bg-neutral-100">
                           <Image
-  src={product.image}
-  alt={product.name}
-  fill
-  sizes="52px"
-  className="object-cover"
-/>
+                            src={
+                              product.image
+                            }
+                            alt={
+                              product.name
+                            }
+                            fill
+                            sizes="52px"
+                            className="object-cover"
+                          />
                         </div>
 
                         <div>
@@ -259,15 +254,17 @@ export function ProductTable({
                       </span>
                     </td>
 
-                    <td className="px-5 py-4 text-neutral-400">
-                      —
+                    <td className="px-5 py-4">
+                      <span className="font-medium text-neutral-950">
+  {stock}
+</span>
                     </td>
 
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-1">
                         <Link
                           href={`/admin/products/${product.id}/edit`}
-                          className="flex h-9 w-9 items-center justify-center transition hover:bg-neutral-100"
+                          className="flex h-9 w-9 items-center justify-center transition hover:bg-[#f8f3ef] hover:text-[#a26b42]"
                           aria-label={`Edit ${product.name}`}
                         >
                           <Edit
@@ -295,7 +292,7 @@ export function ProductTable({
 
                         <button
                           type="button"
-                          className="flex h-9 w-9 items-center justify-center text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-950"
+                          className="flex h-9 w-9 items-center justify-center text-neutral-400 transition hover:bg-[#f8f3ef] hover:text-[#a26b42]"
                           aria-label={`More actions for ${product.name}`}
                         >
                           <MoreHorizontal

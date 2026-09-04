@@ -3,6 +3,7 @@ package com.modeva.clothing.service;
 import com.modeva.clothing.dto.ProductRequest;
 import com.modeva.clothing.dto.ProductResponse;
 
+import com.modeva.clothing.entity.Inventory;
 import com.modeva.clothing.entity.Product;
 
 import com.modeva.clothing.exception.DuplicateProductException;
@@ -22,6 +23,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ProductService {
+
+    private static final int
+            DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
     private final ProductRepository
             productRepository;
@@ -85,6 +89,7 @@ public class ProductService {
         );
     }
 
+    @Transactional
     public ProductResponse
     createProduct(
             ProductRequest request
@@ -104,29 +109,53 @@ public class ProductService {
             );
         }
 
+        int initialStock =
+                request.initialStock() != null
+                        ? request.initialStock()
+                        : 0;
+
+        if (
+                initialStock < 0
+        ) {
+            throw new IllegalArgumentException(
+                    "Initial stock cannot be negative."
+            );
+        }
+
         Product product =
                 Product.builder()
+
                         .name(
                                 request.name()
+                                        .trim()
                         )
+
                         .slug(
                                 request.slug()
+                                        .trim()
+                                        .toLowerCase()
                         )
+
                         .category(
                                 request.category()
                         )
+
                         .price(
                                 request.price()
                         )
+
                         .oldPrice(
                                 request.oldPrice()
                         )
+
                         .image(
                                 request.image()
                         )
+
                         .badge(
                                 request.badge()
                         )
+
                         .colors(
                                 request.colors()
                                         != null
@@ -135,6 +164,7 @@ public class ProductService {
                                         )
                                         : new ArrayList<>()
                         )
+
                         .sizes(
                                 request.sizes()
                                         != null
@@ -143,17 +173,49 @@ public class ProductService {
                                         )
                                         : new ArrayList<>()
                         )
+
                         .featured(
                                 request.featured()
                         )
+
                         .newArrival(
                                 request.newArrival()
                         )
+
                         .build();
 
         Product savedProduct =
-                productRepository.save(
-                        product
+                productRepository
+                        .save(
+                                product
+                        );
+
+        Inventory inventory =
+                Inventory.builder()
+
+                        .product(
+                                savedProduct
+                        )
+
+                        .sku(
+                                generateSku(
+                                        savedProduct
+                                )
+                        )
+
+                        .stock(
+                                initialStock
+                        )
+
+                        .lowStockThreshold(
+                                DEFAULT_LOW_STOCK_THRESHOLD
+                        )
+
+                        .build();
+
+        inventoryRepository
+                .save(
+                        inventory
                 );
 
         return mapToResponse(
@@ -161,6 +223,7 @@ public class ProductService {
         );
     }
 
+    @Transactional
     public ProductResponse
     updateProduct(
             Long id,
@@ -201,10 +264,13 @@ public class ProductService {
 
         product.setName(
                 request.name()
+                        .trim()
         );
 
         product.setSlug(
                 request.slug()
+                        .trim()
+                        .toLowerCase()
         );
 
         product.setCategory(
@@ -254,9 +320,10 @@ public class ProductService {
         );
 
         Product updatedProduct =
-                productRepository.save(
-                        product
-                );
+                productRepository
+                        .save(
+                                product
+                        );
 
         return mapToResponse(
                 updatedProduct
@@ -290,10 +357,32 @@ public class ProductService {
                 );
     }
 
+    private String generateSku(
+            Product product
+    ) {
+
+        return String.format(
+                "MOD-%06d",
+                product.getId()
+        );
+    }
+
     private ProductResponse
     mapToResponse(
             Product product
     ) {
+
+        int stock =
+                inventoryRepository
+                        .findByProductId(
+                                product.getId()
+                        )
+                        .map(
+                                Inventory::getStock
+                        )
+                        .orElse(
+                                0
+                        );
 
         return new ProductResponse(
                 product.getId(),
@@ -307,7 +396,8 @@ public class ProductService {
                 product.getColors(),
                 product.getSizes(),
                 product.isFeatured(),
-                product.isNewArrival()
+                product.isNewArrival(),
+                stock
         );
     }
 }

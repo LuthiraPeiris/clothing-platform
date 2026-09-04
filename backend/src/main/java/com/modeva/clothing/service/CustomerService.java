@@ -1,13 +1,18 @@
 package com.modeva.clothing.service;
 
 import com.modeva.clothing.dto.CustomerResponse;
+
 import com.modeva.clothing.entity.Customer;
 import com.modeva.clothing.entity.CustomerStatus;
 import com.modeva.clothing.entity.Order;
+
 import com.modeva.clothing.exception.CustomerNotFoundException;
+
 import com.modeva.clothing.repository.CustomerRepository;
 import com.modeva.clothing.repository.OrderRepository;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,16 +29,28 @@ public class CustomerService {
     private final OrderRepository
             orderRepository;
 
+    /*
+     * ADMIN
+     *
+     * Returns all registered customers.
+     */
     public List<CustomerResponse>
     getAllCustomers() {
 
         return customerRepository
                 .findAll()
                 .stream()
-                .map(this::mapToResponse)
+                .map(
+                        this::mapToResponse
+                )
                 .toList();
     }
 
+    /*
+     * ADMIN
+     *
+     * Returns one customer by database ID.
+     */
     public CustomerResponse
     getCustomerById(
             Long id
@@ -42,11 +59,12 @@ public class CustomerService {
         Customer customer =
                 customerRepository
                         .findById(id)
-                        .orElseThrow(() ->
-                                new CustomerNotFoundException(
-                                        "Customer not found with id: "
-                                                + id
-                                )
+                        .orElseThrow(
+                                () ->
+                                        new CustomerNotFoundException(
+                                                "Customer not found with id: "
+                                                        + id
+                                        )
                         );
 
         return mapToResponse(
@@ -54,8 +72,20 @@ public class CustomerService {
         );
     }
 
+    /*
+     * Called when a customer places
+     * an order.
+     *
+     * If the email already exists,
+     * update the customer's latest
+     * name and phone number.
+     *
+     * Otherwise create a new
+     * customer record.
+     */
     @Transactional
-    public Customer registerOrUpdateCustomer(
+    public Customer
+    registerOrUpdateCustomer(
             String name,
             String email,
             String phone
@@ -66,32 +96,54 @@ public class CustomerService {
                         .trim()
                         .toLowerCase();
 
+        String normalizedName =
+                name.trim();
+
+        String normalizedPhone =
+                phone.trim();
+
         Customer customer =
                 customerRepository
                         .findByEmail(
                                 normalizedEmail
                         )
-                        .orElseGet(() ->
-                                Customer.builder()
-                                        .name(name)
-                                        .email(
-                                                normalizedEmail
-                                        )
-                                        .phone(phone)
-                                        .status(
-                                                CustomerStatus.ACTIVE
-                                        )
-                                        .build()
+                        .orElseGet(
+                                () ->
+                                        Customer.builder()
+                                                .name(
+                                                        normalizedName
+                                                )
+                                                .email(
+                                                        normalizedEmail
+                                                )
+                                                .phone(
+                                                        normalizedPhone
+                                                )
+                                                .status(
+                                                        CustomerStatus.ACTIVE
+                                                )
+                                                .build()
                         );
 
-        customer.setName(name);
-        customer.setPhone(phone);
-
-        return customerRepository.save(
-                customer
+        customer.setName(
+                normalizedName
         );
+
+        customer.setPhone(
+                normalizedPhone
+        );
+
+        return customerRepository
+                .save(
+                        customer
+                );
     }
 
+    /*
+     * ADMIN
+     *
+     * Change customer status.
+     */
     @Transactional
     public CustomerResponse
     updateCustomerStatus(
@@ -102,11 +154,12 @@ public class CustomerService {
         Customer customer =
                 customerRepository
                         .findById(id)
-                        .orElseThrow(() ->
-                                new CustomerNotFoundException(
-                                        "Customer not found with id: "
-                                                + id
-                                )
+                        .orElseThrow(
+                                () ->
+                                        new CustomerNotFoundException(
+                                                "Customer not found with id: "
+                                                        + id
+                                        )
                         );
 
         customer.setStatus(
@@ -114,28 +167,61 @@ public class CustomerService {
         );
 
         Customer updatedCustomer =
-                customerRepository.save(
-                        customer
-                );
+                customerRepository
+                        .save(
+                                customer
+                        );
 
         return mapToResponse(
                 updatedCustomer
         );
     }
 
-    private CustomerResponse mapToResponse(
+    /*
+     * Build customer statistics.
+     *
+     * Existing customer records are
+     * currently identified by email,
+     * so we match historical orders
+     * using normalized email.
+     */
+    private CustomerResponse
+    mapToResponse(
             Customer customer
     ) {
 
+        String customerEmail =
+                customer
+                        .getEmail()
+                        .trim()
+                        .toLowerCase();
+
         List<Order> orders =
                 orderRepository
-                        .findAllByEmail(
-                                customer.getEmail()
-                        );
+                        .findAll()
+                        .stream()
+                        .filter(
+                                order ->
+                                        order.getEmail() != null
+                                                &&
+                                                order.getEmail()
+                                                        .trim()
+                                                        .equalsIgnoreCase(
+                                                                customerEmail
+                                                        )
+                        )
+                        .toList();
 
         BigDecimal totalSpent =
-                orders.stream()
-                        .map(Order::getTotal)
+                orders
+                        .stream()
+                        .map(
+                                Order::getTotal
+                        )
+                        .filter(
+                                total ->
+                                        total != null
+                        )
                         .reduce(
                                 BigDecimal.ZERO,
                                 BigDecimal::add

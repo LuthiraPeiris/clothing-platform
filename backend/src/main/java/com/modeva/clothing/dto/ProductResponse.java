@@ -16,7 +16,8 @@ public record ProductResponse(
         List<String> colors,
         List<String> sizes,
         boolean featured,
-        boolean newArrival
+        boolean newArrival,
+        int stock
 
 ) {
 }

@@ -1,6 +1,7 @@
 package com.modeva.clothing.entity;
 
 import jakarta.persistence.*;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,7 +23,9 @@ import java.util.List;
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy = GenerationType.IDENTITY
+    )
     private Long id;
 
     @Column(
@@ -30,6 +33,22 @@ public class Order {
             unique = true
     )
     private String orderNumber;
+
+    /*
+     * Keycloak user ID.
+     *
+     * This is the JWT "sub" claim.
+     *
+     * We temporarily allow null because
+     * older orders may already exist.
+     * New authenticated orders will
+     * always receive this value.
+     */
+    @Column(
+            name = "keycloak_user_id",
+            length = 100
+    )
+    private String keycloakUserId;
 
     @Column(nullable = false)
     private String customerName;
@@ -104,6 +123,7 @@ public class Order {
     ) {
 
         items.add(item);
+
         item.setOrder(this);
     }
 }

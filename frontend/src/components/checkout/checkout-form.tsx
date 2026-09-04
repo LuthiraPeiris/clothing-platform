@@ -17,6 +17,10 @@ import {
 } from "@/hooks/use-cart";
 
 import {
+  getAccessToken,
+} from "@/services/auth-service";
+
+import {
   createOrder,
 } from "@/services/order-service";
 
@@ -73,7 +77,8 @@ export function CheckoutForm() {
   >(null);
 
   function updateShippingField(
-    field: keyof typeof shippingDetails,
+    field:
+      keyof typeof shippingDetails,
     value: string
   ) {
     setShippingDetails(
@@ -85,7 +90,8 @@ export function CheckoutForm() {
   }
 
   async function handleSubmit(
-    event: React.FormEvent
+    event:
+      React.FormEvent
   ) {
     event.preventDefault();
 
@@ -128,48 +134,72 @@ export function CheckoutForm() {
     }
 
     try {
-      setError(null);
-      setIsSubmitting(true);
+      setError(
+        null
+      );
+
+      setIsSubmitting(
+        true
+      );
+
+      /*
+       * CUSTOMER access token.
+       *
+       * The backend uses the JWT "sub"
+       * claim as the trusted owner ID
+       * for this order.
+       */
+      const accessToken =
+        await getAccessToken();
 
       const order =
-        await createOrder({
-          customerName,
+        await createOrder(
+          {
+            customerName,
 
-          email:
-            shippingDetails.email.trim(),
+            email:
+              shippingDetails.email
+                .trim(),
 
-          phone:
-            shippingDetails.phone.trim(),
+            phone:
+              shippingDetails.phone
+                .trim(),
 
-          shippingAddress:
-            shippingDetails.address.trim(),
+            shippingAddress:
+              shippingDetails.address
+                .trim(),
 
-          city:
-            shippingDetails.city.trim(),
+            city:
+              shippingDetails.city
+                .trim(),
 
-          postalCode:
-            shippingDetails.postalCode.trim() ||
-            undefined,
+            postalCode:
+              shippingDetails.postalCode
+                .trim() ||
+              undefined,
 
-          items:
-            items.map(
-              (item) => ({
-                productId:
-                  Number(
-                    item.product.id
-                  ),
+            items:
+              items.map(
+                (item) => ({
+                  productId:
+                    Number(
+                      item.product.id
+                    ),
 
-                quantity:
-                  item.quantity,
+                  quantity:
+                    item.quantity,
 
-                selectedSize:
-                  item.selectedSize,
+                  selectedSize:
+                    item.selectedSize,
 
-                selectedColor:
-                  item.selectedColor,
-              })
-            ),
-        });
+                  selectedColor:
+                    item.selectedColor,
+                })
+              ),
+          },
+
+          accessToken
+        );
 
       clearCart();
 
@@ -241,7 +271,9 @@ export function CheckoutForm() {
 
       <div className="lg:sticky lg:top-28">
         <OrderSummary
-          items={items}
+          items={
+            items
+          }
           subtotal={
             subtotal
           }

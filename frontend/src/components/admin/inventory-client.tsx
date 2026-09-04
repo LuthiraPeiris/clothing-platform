@@ -32,11 +32,16 @@ export function InventoryClient({
   ] =
     useState<
       InventoryItem[]
-    >(initialInventory);
+    >(
+      initialInventory
+    );
 
   const totalStock =
     inventory.reduce(
-      (total, item) =>
+      (
+        total,
+        item
+      ) =>
         total +
         item.stock,
       0
@@ -67,32 +72,40 @@ export function InventoryClient({
     {
       label:
         "Total Units",
+
       value:
         totalStock,
+
       icon:
         Boxes,
     },
     {
       label:
         "In Stock",
+
       value:
         inStock,
+
       icon:
         PackageCheck,
     },
     {
       label:
         "Low Stock",
+
       value:
         lowStock,
+
       icon:
         AlertTriangle,
     },
     {
       label:
         "Out of Stock",
+
       value:
         outOfStock,
+
       icon:
         PackageX,
     },
@@ -130,7 +143,7 @@ export function InventoryClient({
                 }
                 className="border border-neutral-200 bg-white p-5"
               >
-                <div className="flex h-10 w-10 items-center justify-center bg-neutral-100">
+                <div className="flex h-10 w-10 items-center justify-center bg-[#f8f3ef] text-[#a26b42]">
                   <Icon
                     size={19}
                   />

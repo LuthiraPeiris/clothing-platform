@@ -19,6 +19,7 @@ type ProductApiResponse = {
   sizes: string[] | null;
   featured: boolean;
   newArrival: boolean;
+  stock: number;
 };
 
 type ImageUploadResponse = {
@@ -50,6 +51,14 @@ export type ProductRequest = {
   featured: boolean;
 
   newArrival: boolean;
+
+  /*
+   * Only required during product creation.
+   *
+   * Inventory changes after creation
+   * happen through the Inventory module.
+   */
+  initialStock?: number;
 };
 
 function mapProduct(
@@ -98,12 +107,37 @@ function mapProduct(
 
     isNewArrival:
       product.newArrival,
+
+    stock:
+      product.stock ?? 0,
   };
 }
 
 async function getErrorMessage(
   response: Response
 ) {
+  try {
+    const data =
+      await response.json();
+
+    if (
+      typeof data?.message ===
+      "string"
+    ) {
+      return data.message;
+    }
+
+    if (
+      data?.errors
+    ) {
+      return Object.values(
+        data.errors
+      ).join(", ");
+    }
+  } catch {
+    // Ignore non-JSON responses.
+  }
+
   if (
     response.status === 401
   ) {
@@ -128,38 +162,14 @@ async function getErrorMessage(
     );
   }
 
-  try {
-    const data =
-      await response.json();
-
-    if (
-      typeof data?.message ===
-      "string"
-    ) {
-      return data.message;
-    }
-
-    if (
-      data?.errors
-    ) {
-      return Object.values(
-        data.errors
-      ).join(", ");
-    }
-  } catch {
-    // Response body was not JSON.
-  }
-
   return (
     `Request failed with status ${response.status}`
   );
 }
 
-/*
- * PUBLIC
- */
 export async function getProducts():
   Promise<Product[]> {
+
   const response =
     await fetch(
       `${API_URL}/api/products`,
@@ -188,12 +198,10 @@ export async function getProducts():
   );
 }
 
-/*
- * PUBLIC
- */
 export async function getProductById(
   id: string
 ): Promise<Product> {
+
   const response =
     await fetch(
       `${API_URL}/api/products/${id}`,
@@ -222,12 +230,10 @@ export async function getProductById(
   );
 }
 
-/*
- * PUBLIC
- */
 export async function getProductBySlug(
   slug: string
 ): Promise<Product> {
+
   const response =
     await fetch(
       `${API_URL}/api/products/slug/${slug}`,
@@ -256,15 +262,11 @@ export async function getProductBySlug(
   );
 }
 
-/*
- * ADMIN ONLY
- *
- * Upload product image.
- */
 export async function uploadProductImage(
   file: File,
   accessToken: string
 ): Promise<string> {
+
   const formData =
     new FormData();
 
@@ -290,17 +292,6 @@ export async function uploadProductImage(
       }
     );
 
-  /*
-   * IMPORTANT:
-   *
-   * Do not manually set Content-Type
-   * here.
-   *
-   * The browser automatically adds
-   * multipart/form-data together with
-   * its required boundary.
-   */
-
   if (
     !response.ok
   ) {
@@ -318,13 +309,11 @@ export async function uploadProductImage(
   return data.imageUrl;
 }
 
-/*
- * ADMIN ONLY
- */
 export async function createProduct(
   product: ProductRequest,
   accessToken: string
 ): Promise<Product> {
+
   const response =
     await fetch(
       `${API_URL}/api/products`,
@@ -366,14 +355,12 @@ export async function createProduct(
   );
 }
 
-/*
- * ADMIN ONLY
- */
 export async function updateProduct(
   id: string,
   product: ProductRequest,
   accessToken: string
 ): Promise<Product> {
+
   const response =
     await fetch(
       `${API_URL}/api/products/${id}`,
@@ -415,13 +402,11 @@ export async function updateProduct(
   );
 }
 
-/*
- * ADMIN ONLY
- */
 export async function deleteProduct(
   id: string,
   accessToken: string
 ): Promise<void> {
+
   const response =
     await fetch(
       `${API_URL}/api/products/${id}`,
