@@ -51,7 +51,7 @@ export default function AdminLayout({
     }
 
     /*
-     * User is not logged in.
+     * Not logged in.
      */
     if (!authenticated) {
       router.replace(
@@ -62,9 +62,8 @@ export default function AdminLayout({
     }
 
     /*
-     * User is logged in,
-     * but does not have
-     * the ADMIN role.
+     * Logged in but does not
+     * have the ADMIN role.
      */
     if (!isAdmin) {
       router.replace(
@@ -79,8 +78,8 @@ export default function AdminLayout({
   ]);
 
   /*
-   * Wait until Keycloak has
-   * finished checking the session.
+   * Wait until Keycloak finishes
+   * checking the current session.
    */
   if (!initialized) {
     return (
@@ -91,8 +90,8 @@ export default function AdminLayout({
   }
 
   /*
-   * Prevent protected admin UI
-   * from flashing before redirect.
+   * Prevent admin content from
+   * flashing before redirect.
    */
   if (
     !authenticated ||
@@ -160,7 +159,7 @@ export default function AdminLayout({
                       "Admin"}
                   </p>
 
-                  <p className="text-[11px] text-neutral-500">
+                  <p className="text-[11px] text-[#a26b42]">
                     Administrator
                   </p>
                 </div>

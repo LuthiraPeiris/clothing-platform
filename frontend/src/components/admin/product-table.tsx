@@ -9,6 +9,7 @@ import {
 
 import Image from "next/image";
 import Link from "next/link";
+
 import {
   useRouter,
 } from "next/navigation";
@@ -20,6 +21,10 @@ import {
 import {
   formatCurrency,
 } from "@/lib/formatters";
+
+import {
+  getAccessToken,
+} from "@/services/auth-service";
 
 import {
   deleteProduct,
@@ -73,16 +78,39 @@ export function ProductTable({
     }
 
     try {
-      setError(null);
+      setError(
+        null
+      );
 
       setDeletingId(
         product.id
       );
 
+      /*
+       * Get a fresh Keycloak access token.
+       *
+       * This will also refresh the token
+       * automatically if it is close
+       * to expiring.
+       */
+      const accessToken =
+        await getAccessToken();
+
+      /*
+       * Send the JWT to Spring Boot.
+       *
+       * Spring Security will now verify
+       * that the user has ADMIN role.
+       */
       await deleteProduct(
-        product.id
+        product.id,
+        accessToken
       );
 
+      /*
+       * Remove the deleted product
+       * immediately from the table.
+       */
       setProducts(
         (current) =>
           current.filter(
@@ -92,6 +120,10 @@ export function ProductTable({
           )
       );
 
+      /*
+       * Refresh server components
+       * using this product list.
+       */
       router.refresh();
     } catch (error) {
       setError(
@@ -115,14 +147,13 @@ export function ProductTable({
           </h2>
 
           <p className="mt-1 text-sm text-neutral-500">
-            Manage your store
-            catalogue.
+            Manage your store catalogue.
           </p>
         </div>
 
         <Link
           href="/admin/products/new"
-          className="inline-flex h-11 items-center justify-center gap-2 bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800"
+          className="inline-flex h-11 items-center justify-center gap-2 bg-[#a26b42] px-5 text-sm font-medium text-white transition hover:bg-[#8d5c39]"
         >
           <Plus
             size={17}
@@ -186,15 +217,12 @@ export function ProductTable({
                       <div className="flex items-center gap-4">
                         <div className="relative h-16 w-13 shrink-0 overflow-hidden bg-neutral-100">
                           <Image
-                            src={
-                              product.image
-                            }
-                            alt={
-                              product.name
-                            }
-                            fill
-                            className="object-cover"
-                          />
+  src={product.image}
+  alt={product.name}
+  fill
+  sizes="52px"
+  className="object-cover"
+/>
                         </div>
 
                         <div>
@@ -288,8 +316,7 @@ export function ProductTable({
                   colSpan={6}
                   className="px-5 py-16 text-center text-sm text-neutral-500"
                 >
-                  No products
-                  available.
+                  No products available.
                 </td>
               </tr>
             )}

@@ -50,12 +50,14 @@ const activity = [
   },
   {
     title: "Low stock",
-    description: "Classic Linen Shirt has 4 units remaining",
+    description:
+      "Classic Linen Shirt has 4 units remaining",
     icon: Package,
   },
   {
     title: "New customer",
-    description: "A new customer account was created",
+    description:
+      "A new customer account was created",
     icon: Users,
   },
 ];
@@ -74,14 +76,14 @@ export default function AdminDashboardPage() {
           </h1>
 
           <p className="mt-2 text-sm leading-6 text-neutral-500">
-            Monitor store performance, orders, inventory,
-            and customers.
+            Monitor store performance, orders,
+            inventory, and customers.
           </p>
         </div>
 
         <Link
           href="/admin/products/new"
-          className="inline-flex h-11 items-center justify-center bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800"
+          className="inline-flex h-11 items-center justify-center bg-[#a26b42] px-5 text-sm font-medium text-white transition hover:bg-[#8d5c39]"
         >
           Add Product
         </Link>
@@ -106,7 +108,7 @@ export default function AdminDashboardPage() {
 
             <Link
               href="/admin/orders"
-              className="flex items-center gap-1 text-sm font-medium"
+              className="flex items-center gap-1 text-sm font-medium text-[#a26b42] transition hover:text-[#8d5c39]"
             >
               View all
               <ArrowRight size={15} />
@@ -185,7 +187,7 @@ export default function AdminDashboardPage() {
                   key={item.title}
                   className="flex gap-4 p-5"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-neutral-100">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-[#f8f3ef] text-[#a26b42]">
                     <Icon size={18} />
                   </div>
 

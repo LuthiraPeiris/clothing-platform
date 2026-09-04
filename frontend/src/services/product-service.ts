@@ -21,20 +21,34 @@ type ProductApiResponse = {
   newArrival: boolean;
 };
 
+type ImageUploadResponse = {
+  imageUrl: string;
+};
+
 export type ProductRequest = {
   name: string;
+
   slug: string;
+
   category:
     | "men"
     | "women"
     | "accessories";
+
   price: number;
+
   oldPrice?: number | null;
+
   image?: string | null;
+
   badge?: string | null;
+
   colors: string[];
+
   sizes: string[];
+
   featured: boolean;
+
   newArrival: boolean;
 };
 
@@ -42,30 +56,42 @@ function mapProduct(
   product: ProductApiResponse
 ): Product {
   return {
-    id: String(product.id),
-    name: product.name,
-    slug: product.slug,
+    id:
+      String(
+        product.id
+      ),
+
+    name:
+      product.name,
+
+    slug:
+      product.slug,
 
     category:
       product.category as Product["category"],
 
-    price: product.price,
+    price:
+      product.price,
 
     oldPrice:
-      product.oldPrice ?? undefined,
+      product.oldPrice ??
+      undefined,
 
     image:
       product.image ??
       "/images/products/placeholder.jpg",
 
     badge:
-      product.badge ?? undefined,
+      product.badge ??
+      undefined,
 
     colors:
-      product.colors ?? [],
+      product.colors ??
+      [],
 
     sizes:
-      product.sizes ?? [],
+      product.sizes ??
+      [],
 
     isFeatured:
       product.featured,
@@ -78,6 +104,30 @@ function mapProduct(
 async function getErrorMessage(
   response: Response
 ) {
+  if (
+    response.status === 401
+  ) {
+    return (
+      "Your session is missing or has expired. Please sign in again."
+    );
+  }
+
+  if (
+    response.status === 403
+  ) {
+    return (
+      "You do not have permission to perform this action."
+    );
+  }
+
+  if (
+    response.status === 413
+  ) {
+    return (
+      "The selected image is too large."
+    );
+  }
+
   try {
     const data =
       await response.json();
@@ -89,29 +139,39 @@ async function getErrorMessage(
       return data.message;
     }
 
-    if (data?.errors) {
+    if (
+      data?.errors
+    ) {
       return Object.values(
         data.errors
       ).join(", ");
     }
   } catch {
-    // Ignore invalid JSON
+    // Response body was not JSON.
   }
 
-  return `Request failed with status ${response.status}`;
+  return (
+    `Request failed with status ${response.status}`
+  );
 }
 
-export async function getProducts(): Promise<
-  Product[]
-> {
-  const response = await fetch(
-    `${API_URL}/api/products`,
-    {
-      cache: "no-store",
-    }
-  );
+/*
+ * PUBLIC
+ */
+export async function getProducts():
+  Promise<Product[]> {
+  const response =
+    await fetch(
+      `${API_URL}/api/products`,
+      {
+        cache:
+          "no-store",
+      }
+    );
 
-  if (!response.ok) {
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -119,23 +179,33 @@ export async function getProducts(): Promise<
     );
   }
 
-  const data: ProductApiResponse[] =
-    await response.json();
+  const data:
+    ProductApiResponse[] =
+      await response.json();
 
-  return data.map(mapProduct);
+  return data.map(
+    mapProduct
+  );
 }
 
+/*
+ * PUBLIC
+ */
 export async function getProductById(
   id: string
 ): Promise<Product> {
-  const response = await fetch(
-    `${API_URL}/api/products/${id}`,
-    {
-      cache: "no-store",
-    }
-  );
+  const response =
+    await fetch(
+      `${API_URL}/api/products/${id}`,
+      {
+        cache:
+          "no-store",
+      }
+    );
 
-  if (!response.ok) {
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -143,23 +213,33 @@ export async function getProductById(
     );
   }
 
-  const data: ProductApiResponse =
-    await response.json();
+  const data:
+    ProductApiResponse =
+      await response.json();
 
-  return mapProduct(data);
+  return mapProduct(
+    data
+  );
 }
 
+/*
+ * PUBLIC
+ */
 export async function getProductBySlug(
   slug: string
 ): Promise<Product> {
-  const response = await fetch(
-    `${API_URL}/api/products/slug/${slug}`,
-    {
-      cache: "no-store",
-    }
-  );
+  const response =
+    await fetch(
+      `${API_URL}/api/products/slug/${slug}`,
+      {
+        cache:
+          "no-store",
+      }
+    );
 
-  if (!response.ok) {
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -167,32 +247,109 @@ export async function getProductBySlug(
     );
   }
 
-  const data: ProductApiResponse =
-    await response.json();
+  const data:
+    ProductApiResponse =
+      await response.json();
 
-  return mapProduct(data);
+  return mapProduct(
+    data
+  );
 }
 
+/*
+ * ADMIN ONLY
+ *
+ * Upload product image.
+ */
+export async function uploadProductImage(
+  file: File,
+  accessToken: string
+): Promise<string> {
+  const formData =
+    new FormData();
+
+  formData.append(
+    "image",
+    file
+  );
+
+  const response =
+    await fetch(
+      `${API_URL}/api/products/images`,
+      {
+        method:
+          "POST",
+
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+
+        body:
+          formData,
+      }
+    );
+
+  /*
+   * IMPORTANT:
+   *
+   * Do not manually set Content-Type
+   * here.
+   *
+   * The browser automatically adds
+   * multipart/form-data together with
+   * its required boundary.
+   */
+
+  if (
+    !response.ok
+  ) {
+    throw new Error(
+      await getErrorMessage(
+        response
+      )
+    );
+  }
+
+  const data:
+    ImageUploadResponse =
+      await response.json();
+
+  return data.imageUrl;
+}
+
+/*
+ * ADMIN ONLY
+ */
 export async function createProduct(
-  product: ProductRequest
+  product: ProductRequest,
+  accessToken: string
 ): Promise<Product> {
-  const response = await fetch(
-    `${API_URL}/api/products`,
-    {
-      method: "POST",
+  const response =
+    await fetch(
+      `${API_URL}/api/products`,
+      {
+        method:
+          "POST",
 
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
 
-      body: JSON.stringify(
-        product
-      ),
-    }
-  );
+          "Content-Type":
+            "application/json",
+        },
 
-  if (!response.ok) {
+        body:
+          JSON.stringify(
+            product
+          ),
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -200,33 +357,48 @@ export async function createProduct(
     );
   }
 
-  const data: ProductApiResponse =
-    await response.json();
+  const data:
+    ProductApiResponse =
+      await response.json();
 
-  return mapProduct(data);
+  return mapProduct(
+    data
+  );
 }
 
+/*
+ * ADMIN ONLY
+ */
 export async function updateProduct(
   id: string,
-  product: ProductRequest
+  product: ProductRequest,
+  accessToken: string
 ): Promise<Product> {
-  const response = await fetch(
-    `${API_URL}/api/products/${id}`,
-    {
-      method: "PUT",
+  const response =
+    await fetch(
+      `${API_URL}/api/products/${id}`,
+      {
+        method:
+          "PUT",
 
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
 
-      body: JSON.stringify(
-        product
-      ),
-    }
-  );
+          "Content-Type":
+            "application/json",
+        },
 
-  if (!response.ok) {
+        body:
+          JSON.stringify(
+            product
+          ),
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -234,23 +406,39 @@ export async function updateProduct(
     );
   }
 
-  const data: ProductApiResponse =
-    await response.json();
+  const data:
+    ProductApiResponse =
+      await response.json();
 
-  return mapProduct(data);
+  return mapProduct(
+    data
+  );
 }
 
+/*
+ * ADMIN ONLY
+ */
 export async function deleteProduct(
-  id: string
+  id: string,
+  accessToken: string
 ): Promise<void> {
-  const response = await fetch(
-    `${API_URL}/api/products/${id}`,
-    {
-      method: "DELETE",
-    }
-  );
+  const response =
+    await fetch(
+      `${API_URL}/api/products/${id}`,
+      {
+        method:
+          "DELETE",
 
-  if (!response.ok) {
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
