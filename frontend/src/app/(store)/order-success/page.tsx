@@ -75,14 +75,14 @@ export default async function OrderSuccessPage({
           <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               href="/account/orders"
-              className="inline-flex h-12 items-center justify-center bg-neutral-950 px-7 text-sm font-medium text-white transition hover:bg-neutral-800"
+              className="inline-flex h-12 items-center justify-center bg-[#a26b42] px-7 text-sm font-medium text-white transition hover:bg-[#8d5c39]"
             >
               View My Orders
             </Link>
 
             <Link
               href="/shop"
-              className="inline-flex h-12 items-center justify-center border border-neutral-300 bg-white px-7 text-sm font-medium text-neutral-950 transition hover:border-neutral-950"
+              className="inline-flex h-12 items-center justify-center border border-neutral-300 bg-white px-7 text-sm font-medium text-neutral-950 transition hover:border-[#a26b42] hover:text-[#a26b42]"
             >
               Continue Shopping
             </Link>

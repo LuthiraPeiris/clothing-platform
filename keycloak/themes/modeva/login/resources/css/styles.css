@@ -1,0 +1,63 @@
+:root {
+  --modeva-primary: #a26b42;
+  --modeva-primary-hover: #8d5c39;
+  --modeva-background: #faf9f7;
+  --modeva-soft: #f8f3ef;
+  --modeva-border: #e5e5e5;
+  --modeva-text: #171717;
+  --modeva-muted: #737373;
+}
+
+body {
+  background: var(--modeva-background) !important;
+  color: var(--modeva-text);
+}
+
+.login-pf body {
+  background: var(--modeva-background) !important;
+}
+
+.card-pf {
+  border: 1px solid var(--modeva-border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#kc-header-wrapper {
+  color: var(--modeva-text) !important;
+}
+
+.pf-c-button.pf-m-primary,
+.btn-primary {
+  background: var(--modeva-primary) !important;
+  border-color: var(--modeva-primary) !important;
+  color: white !important;
+}
+
+.pf-c-button.pf-m-primary:hover,
+.btn-primary:hover {
+  background: var(--modeva-primary-hover) !important;
+  border-color: var(--modeva-primary-hover) !important;
+}
+
+input:focus,
+.pf-c-form-control:focus {
+  border-color: var(--modeva-primary) !important;
+  box-shadow: 0 0 0 1px var(--modeva-primary) !important;
+}
+
+a {
+  color: var(--modeva-primary) !important;
+}
+
+a:hover {
+  color: var(--modeva-primary-hover) !important;
+}
+
+#kc-form-wrapper {
+  background: white;
+}
+
+#kc-registration {
+  margin-top: 24px;
+}

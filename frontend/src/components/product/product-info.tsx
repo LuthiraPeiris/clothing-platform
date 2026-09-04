@@ -7,7 +7,9 @@ import {
   ShoppingBag,
 } from "lucide-react";
 
-import { useState } from "react";
+import {
+  useState,
+} from "react";
 
 import {
   useCart,
@@ -40,20 +42,28 @@ type ProductInfoProps = {
 export function ProductInfo({
   product,
 }: ProductInfoProps) {
-  const [selectedSize, setSelectedSize] =
-    useState(
-      product.sizes?.[0] ?? ""
-    );
+  const [
+    selectedSize,
+    setSelectedSize,
+  ] = useState(
+    product.sizes?.[0] ??
+      ""
+  );
 
   const [
     selectedColor,
     setSelectedColor,
   ] = useState(
-    product.colors?.[0] ?? ""
+    product.colors?.[0] ??
+      ""
   );
 
-  const [quantity, setQuantity] =
-    useState(1);
+  const [
+    quantity,
+    setQuantity,
+  ] = useState(
+    1
+  );
 
   const {
     addToCart,
@@ -65,27 +75,80 @@ export function ProductInfo({
   } = useWishlist();
 
   const wishlisted =
-    isWishlisted(product.id);
+    isWishlisted(
+      product.id
+    );
+
+  const stock =
+    product.stock ??
+    0;
+
+  const outOfStock =
+    stock <= 0;
+
+  const maxQuantityReached =
+    quantity >= stock;
+
+  function handleDecreaseQuantity() {
+    setQuantity(
+      (value) =>
+        Math.max(
+          1,
+          value - 1
+        )
+    );
+  }
+
+  function handleIncreaseQuantity() {
+    if (
+      outOfStock
+    ) {
+      return;
+    }
+
+    setQuantity(
+      (value) =>
+        Math.min(
+          stock,
+          value + 1
+        )
+    );
+  }
 
   function handleAddToCart() {
+    if (
+      outOfStock
+    ) {
+      return;
+    }
+
     addToCart({
       product,
+
       quantity,
+
       selectedSize:
-        selectedSize || undefined,
+        selectedSize ||
+        undefined,
+
       selectedColor:
-        selectedColor || undefined,
+        selectedColor ||
+        undefined,
     });
   }
 
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-neutral-500">
-        {product.category}
+        {
+          product.category
+        }
       </p>
 
       <h1 className="font-display mt-3 text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl">
-        {product.name}
+        {
+          product.name
+        }
       </h1>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -105,8 +168,28 @@ export function ProductInfo({
 
         {product.badge && (
           <span className="bg-neutral-100 px-3 py-1 text-xs font-medium">
-            {product.badge}
+            {
+              product.badge
+            }
           </span>
+        )}
+      </div>
+
+      <div className="mt-5">
+        {outOfStock ? (
+          <p className="text-sm font-medium text-red-600">
+            Out of stock
+          </p>
+        ) : (
+          <p className="text-sm text-neutral-500">
+            {
+              stock
+            }{" "}
+            {stock === 1
+              ? "item"
+              : "items"}{" "}
+            available
+          </p>
         )}
       </div>
 
@@ -119,7 +202,8 @@ export function ProductInfo({
 
       <div className="mt-8 space-y-7">
         {product.colors &&
-          product.colors.length > 0 && (
+          product.colors.length >
+            0 && (
             <ProductColorSelector
               colors={
                 product.colors
@@ -134,7 +218,8 @@ export function ProductInfo({
           )}
 
         {product.sizes &&
-          product.sizes.length > 0 && (
+          product.sizes.length >
+            0 && (
             <ProductSizeSelector
               sizes={
                 product.sizes
@@ -149,46 +234,70 @@ export function ProductInfo({
           )}
 
         <div>
-          <p className="mb-3 text-sm font-medium">
-            Quantity
-          </p>
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <p className="text-sm font-medium">
+              Quantity
+            </p>
+
+            {!outOfStock && (
+              <p className="text-xs text-neutral-500">
+                Max:{" "}
+                {
+                  stock
+                }
+              </p>
+            )}
+          </div>
 
           <div className="inline-flex items-center border border-neutral-300">
             <button
               type="button"
-              onClick={() =>
-                setQuantity(
-                  (value) =>
-                    Math.max(
-                      1,
-                      value - 1
-                    )
-                )
+              onClick={
+                handleDecreaseQuantity
               }
-              className="flex h-11 w-11 items-center justify-center transition hover:bg-neutral-100"
+              disabled={
+                quantity <= 1 ||
+                outOfStock
+              }
+              className="flex h-11 w-11 items-center justify-center transition hover:bg-[#f8f3ef] hover:text-[#a26b42] disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="Decrease quantity"
             >
-              <Minus size={16} />
+              <Minus
+                size={16}
+              />
             </button>
 
             <span className="flex h-11 min-w-12 items-center justify-center border-x border-neutral-300 text-sm font-medium">
-              {quantity}
+              {outOfStock
+                ? 0
+                : quantity}
             </span>
 
             <button
               type="button"
-              onClick={() =>
-                setQuantity(
-                  (value) =>
-                    value + 1
-                )
+              onClick={
+                handleIncreaseQuantity
               }
-              className="flex h-11 w-11 items-center justify-center transition hover:bg-neutral-100"
+              disabled={
+                outOfStock ||
+                maxQuantityReached
+              }
+              className="flex h-11 w-11 items-center justify-center transition hover:bg-[#f8f3ef] hover:text-[#a26b42] disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="Increase quantity"
             >
-              <Plus size={16} />
+              <Plus
+                size={16}
+              />
             </button>
           </div>
+
+          {!outOfStock &&
+            maxQuantityReached && (
+              <p className="mt-2 text-xs text-neutral-500">
+                You have reached the
+                maximum available stock.
+              </p>
+            )}
         </div>
       </div>
 
@@ -198,13 +307,18 @@ export function ProductInfo({
           onClick={
             handleAddToCart
           }
-          className="flex h-14 flex-1 items-center justify-center gap-2 bg-neutral-950 px-6 text-sm font-medium text-white transition hover:bg-neutral-800"
+          disabled={
+            outOfStock
+          }
+          className="flex h-14 flex-1 items-center justify-center gap-2 bg-[#a26b42] px-6 text-sm font-medium text-white transition hover:bg-[#8d5c39] disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:text-neutral-500"
         >
           <ShoppingBag
             size={18}
           />
 
-          Add to Cart
+          {outOfStock
+            ? "Out of Stock"
+            : "Add to Cart"}
         </button>
 
         <button
@@ -216,8 +330,8 @@ export function ProductInfo({
           }
           className={`flex h-14 w-14 shrink-0 items-center justify-center border transition ${
             wishlisted
-              ? "border-neutral-950 bg-neutral-950 text-white"
-              : "border-neutral-300 bg-white text-neutral-950 hover:border-neutral-950"
+              ? "border-[#a26b42] bg-[#a26b42] text-white"
+              : "border-neutral-300 bg-white text-neutral-950 hover:border-[#a26b42] hover:text-[#a26b42]"
           }`}
           aria-label={
             wishlisted
