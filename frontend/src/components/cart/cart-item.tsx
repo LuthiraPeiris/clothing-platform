@@ -47,9 +47,14 @@ export function CartItem({
         className="relative h-36 w-28 shrink-0 overflow-hidden bg-neutral-100 sm:h-44 sm:w-36"
       >
         <Image
-          src={product.image}
-          alt={product.name}
+          src={
+            product.image
+          }
+          alt={
+            product.name
+          }
           fill
+          sizes="(max-width: 640px) 112px, 144px"
           className="object-cover"
         />
       </Link>
@@ -59,26 +64,34 @@ export function CartItem({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.16em] text-neutral-500">
-                {product.category}
+                {
+                  product.category
+                }
               </p>
 
               <Link
                 href={`/product/${product.slug}`}
-                className="mt-1 block font-medium text-neutral-950 hover:text-neutral-600"
+                className="mt-1 block font-medium text-neutral-950 transition hover:text-[#a26b42]"
               >
-                {product.name}
+                {
+                  product.name
+                }
               </Link>
             </div>
 
             <button
               type="button"
               onClick={() =>
-                removeFromCart(item.id)
+                removeFromCart(
+                  item.id
+                )
               }
               className="text-neutral-400 transition hover:text-red-600"
               aria-label="Remove item"
             >
-              <Trash2 size={18} />
+              <Trash2
+                size={18}
+              />
             </button>
           </div>
 
@@ -87,7 +100,9 @@ export function CartItem({
               <p>
                 Color:{" "}
                 <span className="text-neutral-700">
-                  {selectedColor}
+                  {
+                    selectedColor
+                  }
                 </span>
               </p>
             )}
@@ -96,7 +111,9 @@ export function CartItem({
               <p>
                 Size:{" "}
                 <span className="text-neutral-700">
-                  {selectedSize}
+                  {
+                    selectedSize
+                  }
                 </span>
               </p>
             )}
@@ -113,14 +130,18 @@ export function CartItem({
                   quantity - 1
                 )
               }
-              className="flex h-9 w-9 items-center justify-center transition hover:bg-neutral-100"
+              className="flex h-9 w-9 items-center justify-center transition hover:bg-[#f8f3ef] hover:text-[#a26b42]"
               aria-label="Decrease quantity"
             >
-              <Minus size={14} />
+              <Minus
+                size={14}
+              />
             </button>
 
             <span className="flex h-9 min-w-10 items-center justify-center border-x border-neutral-300 text-sm">
-              {quantity}
+              {
+                quantity
+              }
             </span>
 
             <button
@@ -131,16 +152,19 @@ export function CartItem({
                   quantity + 1
                 )
               }
-              className="flex h-9 w-9 items-center justify-center transition hover:bg-neutral-100"
+              className="flex h-9 w-9 items-center justify-center transition hover:bg-[#f8f3ef] hover:text-[#a26b42]"
               aria-label="Increase quantity"
             >
-              <Plus size={14} />
+              <Plus
+                size={14}
+              />
             </button>
           </div>
 
           <p className="font-semibold text-neutral-950">
             {formatCurrency(
-              product.price * quantity
+              product.price *
+                quantity
             )}
           </p>
         </div>

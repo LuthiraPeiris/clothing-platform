@@ -10,7 +10,14 @@ import {
 } from "lucide-react";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+
+import {
+  usePathname,
+} from "next/navigation";
+
+import {
+  useAuth,
+} from "@/components/providers/auth-provider";
 
 const adminLinks = [
   {
@@ -41,7 +48,16 @@ const adminLinks = [
 ];
 
 export function AdminSidebar() {
-  const pathname = usePathname();
+  const pathname =
+    usePathname();
+
+  const {
+    logout,
+  } = useAuth();
+
+  function handleLogout() {
+    logout();
+  }
 
   return (
     <aside className="flex h-full flex-col bg-neutral-950 text-white">
@@ -59,39 +75,61 @@ export function AdminSidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 px-4 py-6">
-        {adminLinks.map((item) => {
-          const Icon = item.icon;
+        {adminLinks.map(
+          (item) => {
+            const Icon =
+              item.icon;
 
-          const active =
-            pathname === item.href ||
-            (
-              item.href !== "/admin" &&
-              pathname.startsWith(`${item.href}/`)
+            const active =
+              pathname ===
+                item.href ||
+              (
+                item.href !==
+                  "/admin" &&
+                pathname.startsWith(
+                  `${item.href}/`
+                )
+              );
+
+            return (
+              <Link
+                key={
+                  item.href
+                }
+                href={
+                  item.href
+                }
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition ${
+                  active
+                    ? "bg-[#a26b42] text-white"
+                    : "text-neutral-400 hover:bg-neutral-900 hover:text-white"
+                }`}
+              >
+                <Icon
+                  size={18}
+                />
+
+                {
+                  item.label
+                }
+              </Link>
             );
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition ${
-                active
-                  ? "bg-white text-neutral-950"
-                  : "text-neutral-400 hover:bg-neutral-900 hover:text-white"
-              }`}
-            >
-              <Icon size={18} />
-              {item.label}
-            </Link>
-          );
-        })}
+          }
+        )}
       </nav>
 
       <div className="border-t border-neutral-800 p-4">
         <button
           type="button"
+          onClick={
+            handleLogout
+          }
           className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-neutral-400 transition hover:bg-red-950/30 hover:text-red-400"
         >
-          <LogOut size={18} />
+          <LogOut
+            size={18}
+          />
+
           Sign out
         </button>
       </div>

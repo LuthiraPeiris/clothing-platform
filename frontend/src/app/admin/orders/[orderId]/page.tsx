@@ -1,3 +1,5 @@
+"use client";
+
 import {
   MapPin,
   Package,
@@ -6,46 +8,188 @@ import {
 } from "lucide-react";
 
 import Image from "next/image";
+
 import Link from "next/link";
 
 import {
-  notFound,
+  useParams,
 } from "next/navigation";
+
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import {
   OrderStatusControl,
 } from "@/components/admin/order-status-control";
 
 import {
+  Spinner,
+} from "@/components/ui/spinner";
+
+import {
   formatCurrency,
 } from "@/lib/formatters";
+
+import {
+  getAccessToken,
+} from "@/services/auth-service";
 
 import {
   getOrderById,
 } from "@/services/order-service";
 
-type AdminOrderDetailsPageProps = {
-  params: Promise<{
-    orderId: string;
-  }>;
-};
+import type {
+  OrderResponse,
+} from "@/services/order-service";
 
-export default async function AdminOrderDetailsPage({
-  params,
-}: AdminOrderDetailsPageProps) {
-  const {
+export default function AdminOrderDetailsPage() {
+  const params =
+    useParams<{
+      orderId: string;
+    }>();
+
+  const orderId =
+    params.orderId;
+
+  const [
+    order,
+    setOrder,
+  ] = useState<
+    OrderResponse | null
+  >(null);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(
+    true
+  );
+
+  const [
+    error,
+    setError,
+  ] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    let active =
+      true;
+
+    async function loadOrder() {
+      if (
+        !orderId
+      ) {
+        return;
+      }
+
+      try {
+        setLoading(
+          true
+        );
+
+        setError(
+          null
+        );
+
+        /*
+         * Get ADMIN Keycloak token.
+         */
+        const accessToken =
+          await getAccessToken();
+
+        /*
+         * ADMIN can retrieve any order.
+         */
+        const data =
+          await getOrderById(
+            orderId,
+            accessToken
+          );
+
+        if (
+          active
+        ) {
+          setOrder(
+            data
+          );
+        }
+      } catch (error) {
+        if (
+          active
+        ) {
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Failed to load order."
+          );
+        }
+      } finally {
+        if (
+          active
+        ) {
+          setLoading(
+            false
+          );
+        }
+      }
+    }
+
+    loadOrder();
+
+    return () => {
+      active =
+        false;
+    };
+  }, [
     orderId,
-  } = await params;
+  ]);
 
-  let order;
+  if (
+    loading
+  ) {
+    return (
+      <div className="flex min-h-[450px] items-center justify-center">
+        <div className="flex flex-col items-center">
+          <Spinner
+            size="lg"
+          />
 
-  try {
-    order =
-      await getOrderById(
-        orderId
-      );
-  } catch {
-    notFound();
+          <p className="mt-4 text-sm text-neutral-500">
+            Loading order...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    error ||
+    !order
+  ) {
+    return (
+      <div>
+        <Link
+          href="/admin/orders"
+          className="text-sm text-neutral-500 underline underline-offset-4"
+        >
+          Back to orders
+        </Link>
+
+        <div className="mt-8 border border-neutral-200 bg-white p-8 text-center">
+          <h2 className="font-display text-2xl font-semibold">
+            Order not found
+          </h2>
+
+          <p className="mt-3 text-sm text-neutral-500">
+            {error ??
+              "We could not load this order."}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -123,6 +267,7 @@ export default async function AdminOrderDetailsPage({
                             item.productName
                           }
                           fill
+                          sizes="80px"
                           className="object-cover"
                         />
                       </div>
@@ -253,6 +398,7 @@ export default async function AdminOrderDetailsPage({
                     {
                       order.shippingAddress
                     }
+
                     <br />
 
                     {
@@ -324,13 +470,24 @@ function formatOrderDate(
   return new Intl.DateTimeFormat(
     "en-LK",
     {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      year:
+        "numeric",
+
+      month:
+        "long",
+
+      day:
+        "numeric",
+
+      hour:
+        "2-digit",
+
+      minute:
+        "2-digit",
     }
   ).format(
-    new Date(date)
+    new Date(
+      date
+    )
   );
 }

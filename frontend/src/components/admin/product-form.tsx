@@ -2,7 +2,10 @@
 
 import {
   ImagePlus,
+  Package,
   Save,
+  Trash2,
+  Upload,
 } from "lucide-react";
 
 import {
@@ -10,6 +13,7 @@ import {
 } from "next/navigation";
 
 import {
+  useRef,
   useState,
 } from "react";
 
@@ -26,8 +30,13 @@ import {
 } from "@/components/ui/select";
 
 import {
+  getAccessToken,
+} from "@/services/auth-service";
+
+import {
   createProduct,
   updateProduct,
+  uploadProductImage,
 } from "@/services/product-service";
 
 import type {
@@ -42,11 +51,25 @@ type ProductFormProps = {
   product?: Product;
 };
 
+const MAX_IMAGE_SIZE =
+  5 * 1024 * 1024;
+
+const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
+
 export function ProductForm({
   product,
 }: ProductFormProps) {
   const router =
     useRouter();
+
+  const fileInputRef =
+    useRef<HTMLInputElement>(
+      null
+    );
 
   const [
     isSubmitting,
@@ -61,42 +84,65 @@ export function ProductForm({
   >(null);
 
   const [
+    selectedImage,
+    setSelectedImage,
+  ] = useState<
+    File | null
+  >(null);
+
+  const [
+    imagePreview,
+    setImagePreview,
+  ] = useState<
+    string | null
+  >(
+    product?.image ??
+      null
+  );
+
+  const [
     form,
     setForm,
   ] = useState({
     name:
-      product?.name ?? "",
+      product?.name ??
+      "",
 
     slug:
-      product?.slug ?? "",
+      product?.slug ??
+      "",
 
     category:
       product?.category ??
       "men",
 
     price:
-      product?.price.toString() ??
+      product?.price
+        .toString() ??
       "",
 
     oldPrice:
-      product?.oldPrice?.toString() ??
+      product?.oldPrice
+        ?.toString() ??
       "",
 
     badge:
-      product?.badge ?? "",
+      product?.badge ??
+      "",
 
     image:
-      product?.image ?? "",
+      product?.image ??
+      "",
 
     sizes:
-      product?.sizes?.join(
-        ", "
-      ) ?? "",
+      product?.sizes
+        ?.join(", ") ??
+      "",
 
     colors:
-      product?.colors?.join(
-        ", "
-      ) ?? "",
+      product?.colors
+        ?.join(", ") ??
+      "",
 
     featured:
       product?.isFeatured ??
@@ -106,12 +152,20 @@ export function ProductForm({
       product?.isNewArrival ??
       false,
 
+    /*
+     * Only used while creating.
+     */
+    initialStock:
+      "0",
+
     description:
       "A versatile wardrobe essential designed for everyday comfort and modern styling.",
   });
 
   function updateField(
-    field: keyof typeof form,
+    field:
+      keyof typeof form,
+
     value:
       | string
       | boolean
@@ -119,7 +173,9 @@ export function ProductForm({
     setForm(
       (current) => ({
         ...current,
-        [field]: value,
+
+        [field]:
+          value,
       })
     );
   }
@@ -133,15 +189,117 @@ export function ProductForm({
         (item) =>
           item.trim()
       )
-      .filter(Boolean);
+      .filter(
+        Boolean
+      );
+  }
+
+  function handleImageChange(
+    event:
+      React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file =
+      event.target
+        .files?.[0];
+
+    if (
+      !file
+    ) {
+      return;
+    }
+
+    setError(
+      null
+    );
+
+    if (
+      !ALLOWED_IMAGE_TYPES
+        .includes(
+          file.type
+        )
+    ) {
+      setError(
+        "Please select a JPG, PNG, or WebP image."
+      );
+
+      event.target.value =
+        "";
+
+      return;
+    }
+
+    if (
+      file.size >
+      MAX_IMAGE_SIZE
+    ) {
+      setError(
+        "Image must be smaller than 5 MB."
+      );
+
+      event.target.value =
+        "";
+
+      return;
+    }
+
+    setSelectedImage(
+      file
+    );
+
+    const reader =
+      new FileReader();
+
+    reader.onload =
+      () => {
+
+        if (
+          typeof reader.result ===
+          "string"
+        ) {
+          setImagePreview(
+            reader.result
+          );
+        }
+      };
+
+    reader.readAsDataURL(
+      file
+    );
+  }
+
+  function removeImage() {
+    setSelectedImage(
+      null
+    );
+
+    setImagePreview(
+      null
+    );
+
+    updateField(
+      "image",
+      ""
+    );
+
+    if (
+      fileInputRef.current
+    ) {
+      fileInputRef
+        .current
+        .value =
+        "";
+    }
   }
 
   async function handleSubmit(
-    event: React.FormEvent
+    event:
+      React.FormEvent
   ) {
     event.preventDefault();
 
-    setError(null);
+    setError(
+      null
+    );
 
     const price =
       Number(
@@ -149,15 +307,23 @@ export function ProductForm({
       );
 
     const oldPrice =
-      form.oldPrice.trim()
+      form.oldPrice
+        .trim()
         ? Number(
             form.oldPrice
           )
         : null;
 
+    const initialStock =
+      Number(
+        form.initialStock
+      );
+
     if (
-      !form.name.trim() ||
-      !form.slug.trim()
+      !form.name
+        .trim() ||
+      !form.slug
+        .trim()
     ) {
       setError(
         "Product name and slug are required."
@@ -180,7 +346,8 @@ export function ProductForm({
     }
 
     if (
-      oldPrice !== null &&
+      oldPrice !==
+        null &&
       (
         Number.isNaN(
           oldPrice
@@ -195,61 +362,120 @@ export function ProductForm({
       return;
     }
 
-    const request:
-      ProductRequest = {
-        name:
-          form.name.trim(),
+    /*
+     * Validate stock only when
+     * creating a new product.
+     */
+    if (
+      !product &&
+      (
+        Number.isNaN(
+          initialStock
+        ) ||
+        !Number.isInteger(
+          initialStock
+        ) ||
+        initialStock < 0
+      )
+    ) {
+      setError(
+        "Initial stock must be a whole number of 0 or more."
+      );
 
-        slug:
-          form.slug
-            .trim()
-            .toLowerCase(),
-
-        category:
-          form.category as ProductRequest["category"],
-
-        price,
-
-        oldPrice,
-
-        image:
-          form.image.trim() ||
-          null,
-
-        badge:
-          form.badge.trim() ||
-          null,
-
-        sizes:
-          convertCommaSeparated(
-            form.sizes
-          ),
-
-        colors:
-          convertCommaSeparated(
-            form.colors
-          ),
-
-        featured:
-          form.featured,
-
-        newArrival:
-          form.newArrival,
-      };
+      return;
+    }
 
     try {
       setIsSubmitting(
         true
       );
 
-      if (product) {
+      const accessToken =
+        await getAccessToken();
+
+      let imageUrl:
+        string | null =
+        form.image
+          .trim() ||
+        null;
+
+      if (
+        selectedImage
+      ) {
+        imageUrl =
+          await uploadProductImage(
+            selectedImage,
+            accessToken
+          );
+      }
+
+      const request:
+        ProductRequest = {
+          name:
+            form.name
+              .trim(),
+
+          slug:
+            form.slug
+              .trim()
+              .toLowerCase(),
+
+          category:
+            form.category as ProductRequest["category"],
+
+          price,
+
+          oldPrice,
+
+          image:
+            imageUrl,
+
+          badge:
+            form.badge
+              .trim() ||
+            null,
+
+          sizes:
+            convertCommaSeparated(
+              form.sizes
+            ),
+
+          colors:
+            convertCommaSeparated(
+              form.colors
+            ),
+
+          featured:
+            form.featured,
+
+          newArrival:
+            form.newArrival,
+
+          /*
+           * Only send initialStock
+           * during creation.
+           */
+          ...(
+            !product
+              ? {
+                  initialStock,
+                }
+              : {}
+          ),
+        };
+
+      if (
+        product
+      ) {
         await updateProduct(
           product.id,
-          request
+          request,
+          accessToken
         );
       } else {
         await createProduct(
-          request
+          request,
+          accessToken
         );
       }
 
@@ -258,13 +484,17 @@ export function ProductForm({
       );
 
       router.refresh();
+
     } catch (error) {
+
       setError(
         error instanceof Error
           ? error.message
           : "Something went wrong."
       );
+
     } finally {
+
       setIsSubmitting(
         false
       );
@@ -279,12 +509,15 @@ export function ProductForm({
       className="grid gap-6 xl:grid-cols-[1fr_340px]"
     >
       <div className="space-y-6">
+
+        {/* Product Information */}
         <section className="border border-neutral-200 bg-white p-6">
           <h2 className="font-display text-xl font-semibold">
             Product information
           </h2>
 
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
+
             <div className="sm:col-span-2">
               <label className="mb-2 block text-sm font-medium">
                 Product Name
@@ -449,25 +682,27 @@ export function ProductForm({
                   )
                 }
                 rows={5}
-                className="w-full resize-none border border-neutral-300 bg-white p-4 text-sm text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950"
+                className="w-full resize-none border border-neutral-300 bg-white p-4 text-sm text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-[#a26b42] focus:ring-1 focus:ring-[#a26b42]"
               />
 
               <p className="mt-2 text-xs text-neutral-500">
-                Description is currently
-                UI-only. We will add it
-                to the backend Product
+                Description is currently UI-only.
+                We will add it to the backend Product
                 model later.
               </p>
             </div>
+
           </div>
         </section>
 
+        {/* Variants */}
         <section className="border border-neutral-200 bg-white p-6">
           <h2 className="font-display text-xl font-semibold">
             Variants
           </h2>
 
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
+
             <div>
               <label className="mb-2 block text-sm font-medium">
                 Sizes
@@ -489,8 +724,7 @@ export function ProductForm({
               />
 
               <p className="mt-2 text-xs text-neutral-500">
-                Separate sizes with
-                commas.
+                Separate sizes with commas.
               </p>
             </div>
 
@@ -515,61 +749,190 @@ export function ProductForm({
               />
 
               <p className="mt-2 text-xs text-neutral-500">
-                Separate colors with
-                commas.
+                Separate colors with commas.
               </p>
             </div>
+
           </div>
         </section>
+
+        {/* Initial Inventory */}
+        {!product && (
+          <section className="border border-neutral-200 bg-white p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center bg-[#f8f3ef] text-[#a26b42]">
+                <Package
+                  size={19}
+                />
+              </div>
+
+              <div>
+                <h2 className="font-display text-xl font-semibold">
+                  Inventory
+                </h2>
+
+                <p className="mt-1 text-xs text-neutral-500">
+                  Set the quantity available when this
+                  product is created.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 max-w-xs">
+              <label className="mb-2 block text-sm font-medium">
+                Initial Stock
+              </label>
+
+              <Input
+                required
+                type="number"
+                min="0"
+                step="1"
+                value={
+                  form.initialStock
+                }
+                onChange={(
+                  event
+                ) =>
+                  updateField(
+                    "initialStock",
+                    event.target.value
+                  )
+                }
+                placeholder="0"
+              />
+
+              <p className="mt-2 text-xs leading-5 text-neutral-500">
+                You can increase or decrease this later
+                from the Inventory page.
+              </p>
+            </div>
+          </section>
+        )}
+
       </div>
 
       <div className="space-y-6">
+
+        {/* Product Image */}
         <section className="border border-neutral-200 bg-white p-6">
           <h2 className="font-display text-lg font-semibold">
             Product image
           </h2>
 
-          <div className="mt-5 flex min-h-52 items-center justify-center border border-dashed border-neutral-300 bg-neutral-50 p-6 text-center">
-            <div>
-              <ImagePlus
-                size={28}
-                className="mx-auto text-neutral-400"
+          <input
+            ref={
+              fileInputRef
+            }
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={
+              handleImageChange
+            }
+            className="hidden"
+          />
+
+          {imagePreview ? (
+            <div className="mt-5">
+
+              <div
+                className="h-72 w-full bg-neutral-100 bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage:
+                    `url("${imagePreview}")`,
+                }}
               />
 
-              <p className="mt-3 text-sm font-medium">
-                Add product image
-              </p>
+              <div className="mt-4 grid grid-cols-2 gap-3">
 
-              <p className="mt-1 text-xs text-neutral-500">
-                Image uploading will be
-                connected later.
-              </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    fileInputRef.current
+                      ?.click()
+                  }
+                  disabled={
+                    isSubmitting
+                  }
+                  className="inline-flex h-11 items-center justify-center gap-2 border border-neutral-300 bg-white px-4 text-sm font-medium transition hover:border-[#a26b42] hover:text-[#a26b42] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Upload
+                    size={16}
+                  />
+
+                  Replace
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    removeImage
+                  }
+                  disabled={
+                    isSubmitting
+                  }
+                  className="inline-flex h-11 items-center justify-center gap-2 border border-red-200 bg-white px-4 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Trash2
+                    size={16}
+                  />
+
+                  Remove
+                </button>
+
+              </div>
+
+              {selectedImage && (
+                <p className="mt-3 break-all text-xs text-neutral-500">
+                  {
+                    selectedImage.name
+                  }
+                </p>
+              )}
+
             </div>
-          </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() =>
+                fileInputRef.current
+                  ?.click()
+              }
+              disabled={
+                isSubmitting
+              }
+              className="mt-5 flex min-h-60 w-full items-center justify-center border border-dashed border-neutral-300 bg-neutral-50 p-6 text-center transition hover:border-[#a26b42] hover:bg-[#faf7f5] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <div>
+                <div className="mx-auto flex h-12 w-12 items-center justify-center bg-[#f8f3ef] text-[#a26b42]">
+                  <ImagePlus
+                    size={24}
+                  />
+                </div>
 
-          <Input
-            value={
-              form.image
-            }
-            onChange={(
-              event
-            ) =>
-              updateField(
-                "image",
-                event.target.value
-              )
-            }
-            placeholder="/images/products/example.jpg"
-            className="mt-4 h-11"
-          />
+                <p className="mt-4 text-sm font-medium">
+                  Choose product image
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-neutral-500">
+                  JPG, PNG or WebP
+                  <br />
+                  Maximum 5 MB
+                </p>
+              </div>
+            </button>
+          )}
+
         </section>
 
+        {/* Visibility */}
         <section className="border border-neutral-200 bg-white p-6">
           <h2 className="font-display text-lg font-semibold">
             Visibility
           </h2>
 
           <div className="mt-5 space-y-4">
+
             <label className="flex items-center gap-3 text-sm">
               <input
                 type="checkbox"
@@ -584,7 +947,7 @@ export function ProductForm({
                     event.target.checked
                   )
                 }
-                className="h-4 w-4 accent-neutral-950"
+                className="h-4 w-4 accent-[#a26b42]"
               />
 
               Featured product
@@ -604,11 +967,12 @@ export function ProductForm({
                     event.target.checked
                   )
                 }
-                className="h-4 w-4 accent-neutral-950"
+                className="h-4 w-4 accent-[#a26b42]"
               />
 
               New arrival
             </label>
+
           </div>
         </section>
 
@@ -624,19 +988,23 @@ export function ProductForm({
           disabled={
             isSubmitting
           }
+          className="bg-[#a26b42] text-white hover:bg-[#8d5c39]"
         >
           <Save
             size={17}
           />
 
           {isSubmitting
-            ? product
-              ? "Updating..."
-              : "Creating..."
+            ? selectedImage
+              ? "Uploading & saving..."
+              : product
+                ? "Updating..."
+                : "Creating..."
             : product
               ? "Update Product"
               : "Create Product"}
         </Button>
+
       </div>
     </form>
   );

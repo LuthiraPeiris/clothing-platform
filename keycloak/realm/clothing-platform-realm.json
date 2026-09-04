@@ -1,0 +1,78 @@
+{
+  "realm": "clothing-platform",
+  "enabled": true,
+
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+
+  "roles": {
+    "realm": [
+      {
+        "name": "CUSTOMER",
+        "description": "Regular clothing platform customer",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "ADMIN",
+        "description": "Clothing platform administrator",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "default-roles-clothing-platform",
+        "description": "${role_default-roles}",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "CUSTOMER"
+          ]
+        },
+        "clientRole": false
+      }
+    ]
+  },
+
+  "defaultRole": {
+    "name": "default-roles-clothing-platform",
+    "description": "${role_default-roles}",
+    "composite": true,
+    "clientRole": false
+  },
+
+  "clients": [
+    {
+      "clientId": "clothing-frontend",
+      "name": "Clothing Platform Frontend",
+
+      "enabled": true,
+
+      "protocol": "openid-connect",
+
+      "publicClient": true,
+
+      "standardFlowEnabled": true,
+
+      "directAccessGrantsEnabled": true,
+
+      "serviceAccountsEnabled": false,
+
+      "redirectUris": [
+        "http://localhost:3000/*"
+      ],
+
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
+
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+
+      "fullScopeAllowed": true
+    }
+  ]
+}

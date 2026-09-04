@@ -13,6 +13,10 @@ import {
 } from "react";
 
 import {
+  getAccessToken,
+} from "@/services/auth-service";
+
+import {
   decreaseStock,
   increaseStock,
 } from "@/services/inventory-service";
@@ -38,13 +42,22 @@ export function InventoryTable({
     setInventory,
   ] = useState<
     InventoryItem[]
-  >(initialInventory);
+  >(
+    initialInventory
+  );
 
   const [
     updatingProductId,
     setUpdatingProductId,
   ] = useState<
     number | null
+  >(null);
+
+  const [
+    error,
+    setError,
+  ] = useState<
+    string | null
   >(null);
 
   function saveInventory(
@@ -84,10 +97,28 @@ export function InventoryTable({
         productId
       );
 
+      setError(
+        null
+      );
+
+      /*
+       * Get current ADMIN
+       * Keycloak token.
+       */
+      const accessToken =
+        await getAccessToken();
+
+      /*
+       * Protected ADMIN endpoint:
+       *
+       * PATCH
+       * /api/inventory/product/{id}/increase
+       */
       const updatedItem =
         await increaseStock(
           productId,
-          1
+          1,
+          accessToken
         );
 
       replaceInventoryItem(
@@ -97,6 +128,12 @@ export function InventoryTable({
       console.error(
         "Failed to increase stock:",
         error
+      );
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to increase stock."
       );
     } finally {
       setUpdatingProductId(
@@ -113,10 +150,28 @@ export function InventoryTable({
         productId
       );
 
+      setError(
+        null
+      );
+
+      /*
+       * Get current ADMIN
+       * Keycloak token.
+       */
+      const accessToken =
+        await getAccessToken();
+
+      /*
+       * Protected ADMIN endpoint:
+       *
+       * PATCH
+       * /api/inventory/product/{id}/decrease
+       */
       const updatedItem =
         await decreaseStock(
           productId,
-          1
+          1,
+          accessToken
         );
 
       replaceInventoryItem(
@@ -126,6 +181,12 @@ export function InventoryTable({
       console.error(
         "Failed to decrease stock:",
         error
+      );
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to decrease stock."
       );
     } finally {
       setUpdatingProductId(
@@ -145,6 +206,12 @@ export function InventoryTable({
           Update product stock using
           the controls below.
         </p>
+
+        {error && (
+          <div className="mt-4 border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
       </div>
 
       <div className="overflow-x-auto">
@@ -206,6 +273,7 @@ export function InventoryTable({
                               item.productName
                             }
                             fill
+                            sizes="52px"
                             className="object-cover"
                           />
                         </div>
@@ -270,7 +338,7 @@ export function InventoryTable({
                               0 ||
                             updating
                           }
-                          className="flex h-10 w-10 items-center justify-center border border-neutral-300 transition hover:border-neutral-950 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
+                          className="flex h-10 w-10 items-center justify-center border border-neutral-300 transition hover:border-[#a26b42] hover:bg-[#f8f3ef] hover:text-[#a26b42] disabled:cursor-not-allowed disabled:opacity-30"
                           aria-label={`Decrease stock for ${item.productName}`}
                         >
                           <Minus
@@ -294,7 +362,7 @@ export function InventoryTable({
                           disabled={
                             updating
                           }
-                          className="flex h-10 w-10 items-center justify-center border border-neutral-300 transition hover:border-neutral-950 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30"
+                          className="flex h-10 w-10 items-center justify-center border border-neutral-300 transition hover:border-[#a26b42] hover:bg-[#f8f3ef] hover:text-[#a26b42] disabled:cursor-not-allowed disabled:opacity-30"
                           aria-label={`Increase stock for ${item.productName}`}
                         >
                           <Plus

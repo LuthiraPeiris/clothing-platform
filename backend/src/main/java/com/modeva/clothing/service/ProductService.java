@@ -2,12 +2,18 @@ package com.modeva.clothing.service;
 
 import com.modeva.clothing.dto.ProductRequest;
 import com.modeva.clothing.dto.ProductResponse;
+
+import com.modeva.clothing.entity.Inventory;
 import com.modeva.clothing.entity.Product;
+
 import com.modeva.clothing.exception.DuplicateProductException;
 import com.modeva.clothing.exception.ProductNotFoundException;
+
 import com.modeva.clothing.repository.InventoryRepository;
 import com.modeva.clothing.repository.ProductRepository;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,160 +24,365 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductService {
 
-    private final ProductRepository productRepository;
-    private final InventoryRepository inventoryRepository;
+    private static final int
+            DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
-    public List<ProductResponse> getAllProducts() {
+    private final ProductRepository
+            productRepository;
+
+    private final InventoryRepository
+            inventoryRepository;
+
+    public List<ProductResponse>
+    getAllProducts() {
 
         return productRepository
                 .findAll()
                 .stream()
-                .map(this::mapToResponse)
+                .map(
+                        this::mapToResponse
+                )
                 .toList();
     }
 
-    public ProductResponse getProductById(Long id) {
+    public ProductResponse
+    getProductById(
+            Long id
+    ) {
 
-        Product product = productRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new ProductNotFoundException(
-                                "Product not found with id: " + id
-                        )
-                );
+        Product product =
+                productRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new ProductNotFoundException(
+                                                "Product not found with id: "
+                                                        + id
+                                        )
+                        );
 
-        return mapToResponse(product);
+        return mapToResponse(
+                product
+        );
     }
 
-    public ProductResponse getProductBySlug(String slug) {
+    public ProductResponse
+    getProductBySlug(
+            String slug
+    ) {
 
-        Product product = productRepository
-                .findBySlug(slug)
-                .orElseThrow(() ->
-                        new ProductNotFoundException(
-                                "Product not found with slug: " + slug
+        Product product =
+                productRepository
+                        .findBySlug(
+                                slug
                         )
-                );
+                        .orElseThrow(
+                                () ->
+                                        new ProductNotFoundException(
+                                                "Product not found with slug: "
+                                                        + slug
+                                        )
+                        );
 
-        return mapToResponse(product);
+        return mapToResponse(
+                product
+        );
     }
 
-    public ProductResponse createProduct(
+    @Transactional
+    public ProductResponse
+    createProduct(
             ProductRequest request
     ) {
 
-        if (productRepository.existsBySlug(request.slug())) {
+        if (
+                productRepository
+                        .existsBySlug(
+                                request.slug()
+                        )
+        ) {
 
             throw new DuplicateProductException(
-                    "Product with slug '" +
-                            request.slug() +
-                            "' already exists"
+                    "Product with slug '"
+                            + request.slug()
+                            + "' already exists"
             );
         }
 
-        Product product = Product.builder()
-                .name(request.name())
-                .slug(request.slug())
-                .category(request.category())
-                .price(request.price())
-                .oldPrice(request.oldPrice())
-                .image(request.image())
-                .badge(request.badge())
-                .colors(
-                        request.colors() != null
-                                ? new ArrayList<>(request.colors())
-                                : new ArrayList<>()
-                )
-                .sizes(
-                        request.sizes() != null
-                                ? new ArrayList<>(request.sizes())
-                                : new ArrayList<>()
-                )
-                .featured(request.featured())
-                .newArrival(request.newArrival())
-                .build();
+        int initialStock =
+                request.initialStock() != null
+                        ? request.initialStock()
+                        : 0;
+
+        if (
+                initialStock < 0
+        ) {
+            throw new IllegalArgumentException(
+                    "Initial stock cannot be negative."
+            );
+        }
+
+        Product product =
+                Product.builder()
+
+                        .name(
+                                request.name()
+                                        .trim()
+                        )
+
+                        .slug(
+                                request.slug()
+                                        .trim()
+                                        .toLowerCase()
+                        )
+
+                        .category(
+                                request.category()
+                        )
+
+                        .price(
+                                request.price()
+                        )
+
+                        .oldPrice(
+                                request.oldPrice()
+                        )
+
+                        .image(
+                                request.image()
+                        )
+
+                        .badge(
+                                request.badge()
+                        )
+
+                        .colors(
+                                request.colors()
+                                        != null
+                                        ? new ArrayList<>(
+                                                request.colors()
+                                        )
+                                        : new ArrayList<>()
+                        )
+
+                        .sizes(
+                                request.sizes()
+                                        != null
+                                        ? new ArrayList<>(
+                                                request.sizes()
+                                        )
+                                        : new ArrayList<>()
+                        )
+
+                        .featured(
+                                request.featured()
+                        )
+
+                        .newArrival(
+                                request.newArrival()
+                        )
+
+                        .build();
 
         Product savedProduct =
-                productRepository.save(product);
+                productRepository
+                        .save(
+                                product
+                        );
 
-        return mapToResponse(savedProduct);
+        Inventory inventory =
+                Inventory.builder()
+
+                        .product(
+                                savedProduct
+                        )
+
+                        .sku(
+                                generateSku(
+                                        savedProduct
+                                )
+                        )
+
+                        .stock(
+                                initialStock
+                        )
+
+                        .lowStockThreshold(
+                                DEFAULT_LOW_STOCK_THRESHOLD
+                        )
+
+                        .build();
+
+        inventoryRepository
+                .save(
+                        inventory
+                );
+
+        return mapToResponse(
+                savedProduct
+        );
     }
 
-    public ProductResponse updateProduct(
+    @Transactional
+    public ProductResponse
+    updateProduct(
             Long id,
             ProductRequest request
     ) {
 
-        Product product = productRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new ProductNotFoundException(
-                                "Product not found with id: " + id
-                        )
-                );
+        Product product =
+                productRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new ProductNotFoundException(
+                                                "Product not found with id: "
+                                                        + id
+                                        )
+                        );
 
         productRepository
-                .findBySlug(request.slug())
-                .filter(existingProduct ->
-                        !existingProduct.getId().equals(id)
+                .findBySlug(
+                        request.slug()
                 )
-                .ifPresent(existingProduct -> {
+                .filter(
+                        existingProduct ->
+                                !existingProduct
+                                        .getId()
+                                        .equals(id)
+                )
+                .ifPresent(
+                        existingProduct -> {
 
-                    throw new DuplicateProductException(
-                            "Product with slug '" +
-                                    request.slug() +
-                                    "' already exists"
-                    );
-                });
+                            throw new DuplicateProductException(
+                                    "Product with slug '"
+                                            + request.slug()
+                                            + "' already exists"
+                            );
+                        }
+                );
 
-        product.setName(request.name());
-        product.setSlug(request.slug());
-        product.setCategory(request.category());
-        product.setPrice(request.price());
-        product.setOldPrice(request.oldPrice());
-        product.setImage(request.image());
-        product.setBadge(request.badge());
+        product.setName(
+                request.name()
+                        .trim()
+        );
+
+        product.setSlug(
+                request.slug()
+                        .trim()
+                        .toLowerCase()
+        );
+
+        product.setCategory(
+                request.category()
+        );
+
+        product.setPrice(
+                request.price()
+        );
+
+        product.setOldPrice(
+                request.oldPrice()
+        );
+
+        product.setImage(
+                request.image()
+        );
+
+        product.setBadge(
+                request.badge()
+        );
 
         product.setColors(
-                request.colors() != null
-                        ? new ArrayList<>(request.colors())
+                request.colors()
+                        != null
+                        ? new ArrayList<>(
+                                request.colors()
+                        )
                         : new ArrayList<>()
         );
 
         product.setSizes(
-                request.sizes() != null
-                        ? new ArrayList<>(request.sizes())
+                request.sizes()
+                        != null
+                        ? new ArrayList<>(
+                                request.sizes()
+                        )
                         : new ArrayList<>()
         );
 
-        product.setFeatured(request.featured());
-        product.setNewArrival(request.newArrival());
+        product.setFeatured(
+                request.featured()
+        );
+
+        product.setNewArrival(
+                request.newArrival()
+        );
 
         Product updatedProduct =
-                productRepository.save(product);
+                productRepository
+                        .save(
+                                product
+                        );
 
-        return mapToResponse(updatedProduct);
+        return mapToResponse(
+                updatedProduct
+        );
     }
 
     @Transactional
-    public void deleteProduct(Long id) {
+    public void deleteProduct(
+            Long id
+    ) {
 
-        Product product = productRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new ProductNotFoundException(
-                                "Product not found with id: " + id
-                        )
+        Product product =
+                productRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new ProductNotFoundException(
+                                                "Product not found with id: "
+                                                        + id
+                                        )
+                        );
+
+        inventoryRepository
+                .deleteByProductId(
+                        id
                 );
 
-        inventoryRepository.deleteByProductId(id);
-
-        productRepository.delete(product);
+        productRepository
+                .delete(
+                        product
+                );
     }
 
-    private ProductResponse mapToResponse(
+    private String generateSku(
             Product product
     ) {
+
+        return String.format(
+                "MOD-%06d",
+                product.getId()
+        );
+    }
+
+    private ProductResponse
+    mapToResponse(
+            Product product
+    ) {
+
+        int stock =
+                inventoryRepository
+                        .findByProductId(
+                                product.getId()
+                        )
+                        .map(
+                                Inventory::getStock
+                        )
+                        .orElse(
+                                0
+                        );
 
         return new ProductResponse(
                 product.getId(),
@@ -185,7 +396,8 @@ public class ProductService {
                 product.getColors(),
                 product.getSizes(),
                 product.isFeatured(),
-                product.isNewArrival()
+                product.isNewArrival(),
+                stock
         );
     }
 }

@@ -1,44 +1,177 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 
 import {
-  notFound,
+  useParams,
 } from "next/navigation";
+
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import {
   OrderTracker,
 } from "@/components/account/order-tracker";
 
 import {
+  Spinner,
+} from "@/components/ui/spinner";
+
+import {
   formatCurrency,
 } from "@/lib/formatters";
+
+import {
+  getAccessToken,
+} from "@/services/auth-service";
 
 import {
   getOrderById,
 } from "@/services/order-service";
 
-type OrderDetailsPageProps = {
-  params: Promise<{
-    orderId: string;
-  }>;
-};
+import type {
+  OrderResponse,
+} from "@/services/order-service";
 
-export default async function OrderDetailsPage({
-  params,
-}: OrderDetailsPageProps) {
-  const {
+export default function OrderDetailsPage() {
+  const params =
+    useParams<{
+      orderId: string;
+    }>();
+
+  const orderId =
+    params.orderId;
+
+  const [
+    order,
+    setOrder,
+  ] = useState<
+    OrderResponse | null
+  >(null);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
+    error,
+    setError,
+  ] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    let active =
+      true;
+
+    async function loadOrder() {
+      if (
+        !orderId
+      ) {
+        return;
+      }
+
+      try {
+        setLoading(
+          true
+        );
+
+        setError(
+          null
+        );
+
+        const accessToken =
+          await getAccessToken();
+
+        const data =
+          await getOrderById(
+            orderId,
+            accessToken
+          );
+
+        if (
+          active
+        ) {
+          setOrder(
+            data
+          );
+        }
+      } catch (error) {
+        if (
+          active
+        ) {
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Failed to load order."
+          );
+        }
+      } finally {
+        if (
+          active
+        ) {
+          setLoading(
+            false
+          );
+        }
+      }
+    }
+
+    loadOrder();
+
+    return () => {
+      active =
+        false;
+    };
+  }, [
     orderId,
-  } = await params;
+  ]);
 
-  let order;
+  if (
+    loading
+  ) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="flex flex-col items-center">
+          <Spinner
+            size="lg"
+          />
 
-  try {
-    order =
-      await getOrderById(
-        orderId
-      );
-  } catch {
-    notFound();
+          <p className="mt-4 text-sm text-neutral-500">
+            Loading order...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    error ||
+    !order
+  ) {
+    return (
+      <div className="border border-neutral-200 bg-white p-8 text-center">
+        <h2 className="font-display text-2xl font-semibold">
+          Order not found
+        </h2>
+
+        <p className="mt-3 text-sm text-neutral-500">
+          {error ??
+            "We could not find this order."}
+        </p>
+
+        <Link
+          href="/account/orders"
+          className="mt-6 inline-flex h-11 items-center justify-center bg-[#a26b42] px-5 text-sm font-medium text-white transition hover:bg-[#8d5c39]"
+        >
+          Back to orders
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -122,6 +255,7 @@ export default async function OrderDetailsPage({
                         item.productName
                       }
                       fill
+                      sizes="80px"
                       className="object-cover"
                     />
                   </div>
@@ -272,13 +406,24 @@ function formatOrderDate(
   return new Intl.DateTimeFormat(
     "en-LK",
     {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      year:
+        "numeric",
+
+      month:
+        "long",
+
+      day:
+        "numeric",
+
+      hour:
+        "2-digit",
+
+      minute:
+        "2-digit",
     }
   ).format(
-    new Date(date)
+    new Date(
+      date
+    )
   );
 }

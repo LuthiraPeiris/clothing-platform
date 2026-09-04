@@ -15,12 +15,18 @@ export function CartList({
 }: CartListProps) {
   return (
     <div>
-      {items.map((item) => (
-        <CartItem
-          key={item.id}
-          item={item}
-        />
-      ))}
+      {items.map(
+        (item) => (
+          <CartItem
+            key={
+              item.id
+            }
+            item={
+              item
+            }
+          />
+        )
+      )}
     </div>
   );
 }

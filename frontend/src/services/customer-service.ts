@@ -8,12 +8,19 @@ export type CustomerStatus =
 
 export type CustomerResponse = {
   id: number;
+
   name: string;
+
   email: string;
+
   phone: string;
+
   orders: number;
+
   totalSpent: number;
+
   joinedAt: string;
+
   status: CustomerStatus;
 };
 
@@ -30,24 +37,69 @@ async function getErrorMessage(
     ) {
       return data.message;
     }
+
+    if (
+      data?.errors
+    ) {
+      return Object.values(
+        data.errors
+      ).join(", ");
+    }
   } catch {
     // Ignore invalid JSON.
   }
 
-  return `Request failed with status ${response.status}`;
+  if (
+    response.status === 401
+  ) {
+    return (
+      "Your session is missing or has expired. Please sign in again."
+    );
+  }
+
+  if (
+    response.status === 403
+  ) {
+    return (
+      "You do not have permission to manage customers."
+    );
+  }
+
+  if (
+    response.status === 404
+  ) {
+    return (
+      "Customer not found."
+    );
+  }
+
+  return (
+    `Request failed with status ${response.status}`
+  );
 }
 
-export async function getCustomers(): Promise<
+export async function getCustomers(
+  accessToken: string
+): Promise<
   CustomerResponse[]
 > {
-  const response = await fetch(
-    `${API_URL}/api/customers`,
-    {
-      cache: "no-store",
-    }
-  );
+  const response =
+    await fetch(
+      `${API_URL}/api/customers`,
+      {
+        cache:
+          "no-store",
 
-  if (!response.ok) {
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -59,16 +111,26 @@ export async function getCustomers(): Promise<
 }
 
 export async function getCustomerById(
-  id: number
+  id: number,
+  accessToken: string
 ): Promise<CustomerResponse> {
-  const response = await fetch(
-    `${API_URL}/api/customers/${id}`,
-    {
-      cache: "no-store",
-    }
-  );
+  const response =
+    await fetch(
+      `${API_URL}/api/customers/${id}`,
+      {
+        cache:
+          "no-store",
 
-  if (!response.ok) {
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -81,25 +143,34 @@ export async function getCustomerById(
 
 export async function updateCustomerStatus(
   id: number,
-  status: CustomerStatus
+  status: CustomerStatus,
+  accessToken: string
 ): Promise<CustomerResponse> {
-  const response = await fetch(
-    `${API_URL}/api/customers/${id}/status`,
-    {
-      method: "PATCH",
+  const response =
+    await fetch(
+      `${API_URL}/api/customers/${id}/status`,
+      {
+        method:
+          "PATCH",
 
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
 
-      body: JSON.stringify({
-        status,
-      }),
-    }
-  );
+          "Content-Type":
+            "application/json",
+        },
 
-  if (!response.ok) {
+        body:
+          JSON.stringify({
+            status,
+          }),
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response

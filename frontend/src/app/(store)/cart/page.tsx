@@ -56,7 +56,10 @@ export default function CartPage() {
                 onClick={clearCart}
                 className="hidden items-center gap-2 text-sm font-medium text-neutral-500 transition hover:text-red-600 sm:flex"
               >
-                <Trash2 size={16} />
+                <Trash2
+                  size={16}
+                />
+
                 Clear cart
               </button>
             )}
@@ -75,9 +78,12 @@ export default function CartPage() {
               <button
                 type="button"
                 onClick={clearCart}
-                className="mt-7 flex items-center gap-2 text-sm font-medium text-neutral-500 sm:hidden"
+                className="mt-7 flex items-center gap-2 text-sm font-medium text-neutral-500 transition hover:text-red-600 sm:hidden"
               >
-                <Trash2 size={16} />
+                <Trash2
+                  size={16}
+                />
+
                 Clear cart
               </button>
             </div>
@@ -90,10 +96,9 @@ export default function CartPage() {
           </div>
         ) : (
           <div className="flex min-h-[460px] flex-col items-center justify-center text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#f8f3ef] text-[#a26b42]">
               <ShoppingBag
                 size={26}
-                className="text-neutral-400"
               />
             </div>
 
@@ -108,7 +113,7 @@ export default function CartPage() {
 
             <Link
               href="/shop"
-              className="mt-7 inline-flex h-12 items-center justify-center bg-neutral-950 px-7 text-sm font-medium text-white transition hover:bg-neutral-800"
+              className="mt-7 inline-flex h-12 items-center justify-center bg-[#a26b42] px-7 text-sm font-medium text-white transition hover:bg-[#8d5c39]"
             >
               Start Shopping
             </Link>

@@ -17,6 +17,10 @@ import {
 } from "@/components/ui/select";
 
 import {
+  getAccessToken,
+} from "@/services/auth-service";
+
+import {
   updateOrderStatus,
 } from "@/services/order-service";
 
@@ -59,23 +63,45 @@ export function OrderStatusControl({
 
   async function handleUpdate() {
     try {
-      setError(null);
-      setSaving(true);
+      setError(
+        null
+      );
 
+      setSaving(
+        true
+      );
+
+      /*
+       * Get current ADMIN token.
+       */
+      const accessToken =
+        await getAccessToken();
+
+      /*
+       * Spring Boot will independently
+       * verify ROLE_ADMIN.
+       */
       await updateOrderStatus(
         orderId,
-        status
+        status,
+        accessToken
       );
 
       router.refresh();
+
     } catch (error) {
+
       setError(
         error instanceof Error
           ? error.message
           : "Failed to update status."
       );
+
     } finally {
-      setSaving(false);
+
+      setSaving(
+        false
+      );
     }
   }
 
@@ -83,7 +109,9 @@ export function OrderStatusControl({
     <div>
       <div className="flex flex-wrap gap-3">
         <Select
-          value={status}
+          value={
+            status
+          }
           onChange={(
             event
           ) =>
@@ -130,6 +158,7 @@ export function OrderStatusControl({
             status ===
               initialStatus
           }
+          className="bg-[#a26b42] text-white hover:bg-[#8d5c39]"
         >
           {saving
             ? "Updating..."

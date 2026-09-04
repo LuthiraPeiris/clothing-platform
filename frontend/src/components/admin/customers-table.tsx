@@ -38,6 +38,10 @@ import {
 } from "@/lib/formatters";
 
 import {
+  getAccessToken,
+} from "@/services/auth-service";
+
+import {
   updateCustomerStatus,
 } from "@/services/customer-service";
 
@@ -95,48 +99,52 @@ export function CustomersTable({
   >(null);
 
   const filteredCustomers =
-    useMemo(() => {
-      const normalizedQuery =
-        query
-          .trim()
-          .toLowerCase();
+    useMemo(
+      () => {
+        const normalizedQuery =
+          query
+            .trim()
+            .toLowerCase();
 
-      return customers.filter(
-        (customer) => {
-          const matchesQuery =
-            !normalizedQuery ||
-            customer.name
-              .toLowerCase()
-              .includes(
-                normalizedQuery
-              ) ||
-            customer.email
-              .toLowerCase()
-              .includes(
-                normalizedQuery
-              ) ||
-            customer.phone
-              .toLowerCase()
-              .includes(
-                normalizedQuery
-              );
+        return customers.filter(
+          (customer) => {
+            const matchesQuery =
+              !normalizedQuery ||
+              customer.name
+                .toLowerCase()
+                .includes(
+                  normalizedQuery
+                ) ||
+              customer.email
+                .toLowerCase()
+                .includes(
+                  normalizedQuery
+                ) ||
+              customer.phone
+                .toLowerCase()
+                .includes(
+                  normalizedQuery
+                );
 
-          const matchesStatus =
-            status === "ALL" ||
-            customer.status ===
-              status;
+            const matchesStatus =
+              status ===
+                "ALL" ||
+              customer.status ===
+                status;
 
-          return (
-            matchesQuery &&
-            matchesStatus
-          );
-        }
-      );
-    }, [
-      customers,
-      query,
-      status,
-    ]);
+            return (
+              matchesQuery &&
+              matchesStatus
+            );
+          }
+        );
+      },
+      [
+        customers,
+        query,
+        status,
+      ]
+    );
 
   async function handleStatusChange(
     customer: CustomerResponse
@@ -149,7 +157,9 @@ export function CustomersTable({
           : "ACTIVE";
 
     try {
-      setError(null);
+      setError(
+        null
+      );
 
       setUpdatingId(
         customer.id
@@ -159,10 +169,14 @@ export function CustomersTable({
         null
       );
 
+      const accessToken =
+        await getAccessToken();
+
       const updatedCustomer =
         await updateCustomerStatus(
           customer.id,
-          newStatus
+          newStatus,
+          accessToken
         );
 
       setCustomers(
@@ -211,7 +225,9 @@ export function CustomersTable({
 
             <Input
               type="search"
-              value={query}
+              value={
+                query
+              }
               onChange={(
                 event
               ) =>
@@ -225,7 +241,9 @@ export function CustomersTable({
           </div>
 
           <Select
-            value={status}
+            value={
+              status
+            }
             onChange={(
               event
             ) =>
@@ -303,6 +321,23 @@ export function CustomersTable({
                   openMenuId ===
                   customer.id;
 
+                const initials =
+                  customer.name
+                    .split(" ")
+                    .filter(
+                      Boolean
+                    )
+                    .map(
+                      (part) =>
+                        part[0]
+                    )
+                    .join("")
+                    .slice(
+                      0,
+                      2
+                    )
+                    .toUpperCase();
+
                 return (
                   <tr
                     key={
@@ -312,16 +347,10 @@ export function CustomersTable({
                   >
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-950 text-sm font-semibold text-white">
-                          {customer.name
-                            .split(" ")
-                            .map(
-                              (part) =>
-                                part[0]
-                            )
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase()}
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f8f3ef] text-sm font-semibold text-[#a26b42]">
+                          {
+                            initials
+                          }
                         </div>
 
                         <div>
@@ -398,7 +427,7 @@ export function CustomersTable({
                                 : customer.id
                             )
                           }
-                          className="h-9 w-9 px-0 text-neutral-400"
+                          className="h-9 w-9 px-0 text-neutral-400 hover:text-[#a26b42]"
                           aria-label="Customer actions"
                         >
                           <MoreHorizontal
@@ -475,11 +504,18 @@ function formatJoinedDate(
   return new Intl.DateTimeFormat(
     "en-LK",
     {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+      year:
+        "numeric",
+
+      month:
+        "short",
+
+      day:
+        "numeric",
     }
   ).format(
-    new Date(date)
+    new Date(
+      date
+    )
   );
 }

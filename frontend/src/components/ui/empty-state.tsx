@@ -32,7 +32,7 @@ export function EmptyState({
       `}
     >
       {icon && (
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#f8f3ef] text-[#a26b42]">
           {icon}
         </div>
       )}

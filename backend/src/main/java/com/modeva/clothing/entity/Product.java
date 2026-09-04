@@ -1,6 +1,7 @@
 package com.modeva.clothing.entity;
 
 import jakarta.persistence.*;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,7 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "products")
+@Table(
+        name = "products"
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,49 +24,92 @@ import java.util.List;
 public class Product {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy =
+                    GenerationType.IDENTITY
+    )
     private Long id;
 
-    @Column(nullable = false)
+    @Column(
+            nullable = false
+    )
     private String name;
 
-    @Column(nullable = false, unique = true)
+    @Column(
+            nullable = false,
+            unique = true
+    )
     private String slug;
 
-    @Column(nullable = false)
+    @Column(
+            nullable = false
+    )
     private String category;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(
+            nullable = false,
+            precision = 10,
+            scale = 2
+    )
     private BigDecimal price;
 
-    @Column(precision = 10, scale = 2)
+    @Column(
+            precision = 10,
+            scale = 2
+    )
     private BigDecimal oldPrice;
 
+    /*
+     * Stores the URL of the uploaded image.
+     *
+     * Example:
+     * http://localhost:8080/uploads/products/abc.jpg
+     */
     private String image;
 
     private String badge;
 
     @ElementCollection
     @CollectionTable(
-        name = "product_colors",
-        joinColumns = @JoinColumn(name = "product_id")
+            name =
+                    "product_colors",
+            joinColumns =
+                    @JoinColumn(
+                            name =
+                                    "product_id"
+                    )
     )
-    @Column(name = "color")
+    @Column(
+            name = "color"
+    )
     @Builder.Default
-    private List<String> colors = new ArrayList<>();
+    private List<String> colors =
+            new ArrayList<>();
 
     @ElementCollection
     @CollectionTable(
-        name = "product_sizes",
-        joinColumns = @JoinColumn(name = "product_id")
+            name =
+                    "product_sizes",
+            joinColumns =
+                    @JoinColumn(
+                            name =
+                                    "product_id"
+                    )
     )
-    @Column(name = "size")
+    @Column(
+            name = "size"
+    )
     @Builder.Default
-    private List<String> sizes = new ArrayList<>();
+    private List<String> sizes =
+            new ArrayList<>();
 
-    @Column(nullable = false)
+    @Column(
+            nullable = false
+    )
     private boolean featured;
 
-    @Column(nullable = false)
+    @Column(
+            nullable = false
+    )
     private boolean newArrival;
 }

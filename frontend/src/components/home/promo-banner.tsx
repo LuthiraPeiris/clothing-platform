@@ -32,7 +32,7 @@ export function PromoBanner() {
 
               <Link
                 href="/shop"
-                className="mt-8 inline-flex h-12 items-center justify-center bg-white px-7 text-sm font-medium text-neutral-950 transition hover:bg-neutral-100"
+                className="mt-8 inline-flex h-12 items-center justify-center bg-[#a26b42] px-7 text-sm font-medium text-white transition hover:bg-[#8d5c39]"
               >
                 Explore Collection
               </Link>

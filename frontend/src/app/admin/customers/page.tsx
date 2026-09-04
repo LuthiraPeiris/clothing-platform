@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ShoppingBag,
   UserCheck,
@@ -6,20 +8,131 @@ import {
 } from "lucide-react";
 
 import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
   CustomersTable,
 } from "@/components/admin/customers-table";
+
+import {
+  Spinner,
+} from "@/components/ui/spinner";
 
 import {
   formatCurrency,
 } from "@/lib/formatters";
 
 import {
+  getAccessToken,
+} from "@/services/auth-service";
+
+import {
   getCustomers,
 } from "@/services/customer-service";
 
-export default async function AdminCustomersPage() {
-  const customers =
-    await getCustomers();
+import type {
+  CustomerResponse,
+} from "@/services/customer-service";
+
+export default function AdminCustomersPage() {
+  const [
+    customers,
+    setCustomers,
+  ] = useState<
+    CustomerResponse[]
+  >([]);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(
+    true
+  );
+
+  const [
+    error,
+    setError,
+  ] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    let active =
+      true;
+
+    async function loadCustomers() {
+      try {
+        setLoading(
+          true
+        );
+
+        setError(
+          null
+        );
+
+        const accessToken =
+          await getAccessToken();
+
+        const data =
+          await getCustomers(
+            accessToken
+          );
+
+        if (
+          active
+        ) {
+          setCustomers(
+            data
+          );
+        }
+      } catch (error) {
+        if (
+          active
+        ) {
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Failed to load customers."
+          );
+        }
+      } finally {
+        if (
+          active
+        ) {
+          setLoading(
+            false
+          );
+        }
+      }
+    }
+
+    loadCustomers();
+
+    return () => {
+      active =
+        false;
+    };
+  }, []);
+
+  if (
+    loading
+  ) {
+    return (
+      <div className="flex min-h-[450px] items-center justify-center">
+        <div className="flex flex-col items-center">
+          <Spinner
+            size="lg"
+          />
+
+          <p className="mt-4 text-sm text-neutral-500">
+            Loading customers...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const totalCustomers =
     customers.length;
@@ -33,7 +146,10 @@ export default async function AdminCustomersPage() {
 
   const totalOrders =
     customers.reduce(
-      (total, customer) =>
+      (
+        total,
+        customer
+      ) =>
         total +
         customer.orders,
       0
@@ -41,7 +157,10 @@ export default async function AdminCustomersPage() {
 
   const totalRevenue =
     customers.reduce(
-      (total, customer) =>
+      (
+        total,
+        customer
+      ) =>
         total +
         customer.totalSpent,
       0
@@ -51,32 +170,44 @@ export default async function AdminCustomersPage() {
     {
       label:
         "Total Customers",
+
       value:
         totalCustomers.toString(),
-      icon: Users,
+
+      icon:
+        Users,
     },
     {
       label:
         "Active Customers",
+
       value:
         activeCustomers.toString(),
-      icon: UserCheck,
+
+      icon:
+        UserCheck,
     },
     {
       label:
         "Customer Orders",
+
       value:
         totalOrders.toString(),
-      icon: ShoppingBag,
+
+      icon:
+        ShoppingBag,
     },
     {
       label:
         "Customer Revenue",
+
       value:
         formatCurrency(
           totalRevenue
         ),
-      icon: WalletCards,
+
+      icon:
+        WalletCards,
     },
   ];
 
@@ -98,49 +229,59 @@ export default async function AdminCustomersPage() {
         </p>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map(
-          (stat) => {
-            const Icon =
-              stat.icon;
+      {error && (
+        <div className="mt-8 border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
-            return (
-              <div
-                key={
-                  stat.label
-                }
-                className="border border-neutral-200 bg-white p-5"
-              >
-                <div className="flex h-10 w-10 items-center justify-center bg-neutral-100">
-                  <Icon
-                    size={19}
-                  />
-                </div>
+      {!error && (
+        <>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {stats.map(
+              (stat) => {
+                const Icon =
+                  stat.icon;
 
-                <p className="mt-5 text-sm text-neutral-500">
-                  {
-                    stat.label
-                  }
-                </p>
+                return (
+                  <div
+                    key={
+                      stat.label
+                    }
+                    className="border border-neutral-200 bg-white p-5"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center bg-[#f8f3ef] text-[#a26b42]">
+                      <Icon
+                        size={19}
+                      />
+                    </div>
 
-                <p className="font-display mt-2 text-2xl font-semibold">
-                  {
-                    stat.value
-                  }
-                </p>
-              </div>
-            );
-          }
-        )}
-      </div>
+                    <p className="mt-5 text-sm text-neutral-500">
+                      {
+                        stat.label
+                      }
+                    </p>
 
-      <div className="mt-6">
-        <CustomersTable
-          initialCustomers={
-            customers
-          }
-        />
-      </div>
+                    <p className="font-display mt-2 text-2xl font-semibold">
+                      {
+                        stat.value
+                      }
+                    </p>
+                  </div>
+                );
+              }
+            )}
+          </div>
+
+          <div className="mt-6">
+            <CustomersTable
+              initialCustomers={
+                customers
+              }
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }

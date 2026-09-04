@@ -19,59 +19,97 @@ type ProductApiResponse = {
   sizes: string[] | null;
   featured: boolean;
   newArrival: boolean;
+  stock: number;
+};
+
+type ImageUploadResponse = {
+  imageUrl: string;
 };
 
 export type ProductRequest = {
   name: string;
+
   slug: string;
+
   category:
     | "men"
     | "women"
     | "accessories";
+
   price: number;
+
   oldPrice?: number | null;
+
   image?: string | null;
+
   badge?: string | null;
+
   colors: string[];
+
   sizes: string[];
+
   featured: boolean;
+
   newArrival: boolean;
+
+  /*
+   * Only required during product creation.
+   *
+   * Inventory changes after creation
+   * happen through the Inventory module.
+   */
+  initialStock?: number;
 };
 
 function mapProduct(
   product: ProductApiResponse
 ): Product {
   return {
-    id: String(product.id),
-    name: product.name,
-    slug: product.slug,
+    id:
+      String(
+        product.id
+      ),
+
+    name:
+      product.name,
+
+    slug:
+      product.slug,
 
     category:
       product.category as Product["category"],
 
-    price: product.price,
+    price:
+      product.price,
 
     oldPrice:
-      product.oldPrice ?? undefined,
+      product.oldPrice ??
+      undefined,
 
     image:
       product.image ??
       "/images/products/placeholder.jpg",
 
     badge:
-      product.badge ?? undefined,
+      product.badge ??
+      undefined,
 
     colors:
-      product.colors ?? [],
+      product.colors ??
+      [],
 
     sizes:
-      product.sizes ?? [],
+      product.sizes ??
+      [],
 
     isFeatured:
       product.featured,
 
     isNewArrival:
       product.newArrival,
+
+    stock:
+      product.stock ?? 0,
   };
 }
 
@@ -89,29 +127,61 @@ async function getErrorMessage(
       return data.message;
     }
 
-    if (data?.errors) {
+    if (
+      data?.errors
+    ) {
       return Object.values(
         data.errors
       ).join(", ");
     }
   } catch {
-    // Ignore invalid JSON
+    // Ignore non-JSON responses.
   }
 
-  return `Request failed with status ${response.status}`;
+  if (
+    response.status === 401
+  ) {
+    return (
+      "Your session is missing or has expired. Please sign in again."
+    );
+  }
+
+  if (
+    response.status === 403
+  ) {
+    return (
+      "You do not have permission to perform this action."
+    );
+  }
+
+  if (
+    response.status === 413
+  ) {
+    return (
+      "The selected image is too large."
+    );
+  }
+
+  return (
+    `Request failed with status ${response.status}`
+  );
 }
 
-export async function getProducts(): Promise<
-  Product[]
-> {
-  const response = await fetch(
-    `${API_URL}/api/products`,
-    {
-      cache: "no-store",
-    }
-  );
+export async function getProducts():
+  Promise<Product[]> {
 
-  if (!response.ok) {
+  const response =
+    await fetch(
+      `${API_URL}/api/products`,
+      {
+        cache:
+          "no-store",
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -119,23 +189,31 @@ export async function getProducts(): Promise<
     );
   }
 
-  const data: ProductApiResponse[] =
-    await response.json();
+  const data:
+    ProductApiResponse[] =
+      await response.json();
 
-  return data.map(mapProduct);
+  return data.map(
+    mapProduct
+  );
 }
 
 export async function getProductById(
   id: string
 ): Promise<Product> {
-  const response = await fetch(
-    `${API_URL}/api/products/${id}`,
-    {
-      cache: "no-store",
-    }
-  );
 
-  if (!response.ok) {
+  const response =
+    await fetch(
+      `${API_URL}/api/products/${id}`,
+      {
+        cache:
+          "no-store",
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -143,23 +221,31 @@ export async function getProductById(
     );
   }
 
-  const data: ProductApiResponse =
-    await response.json();
+  const data:
+    ProductApiResponse =
+      await response.json();
 
-  return mapProduct(data);
+  return mapProduct(
+    data
+  );
 }
 
 export async function getProductBySlug(
   slug: string
 ): Promise<Product> {
-  const response = await fetch(
-    `${API_URL}/api/products/slug/${slug}`,
-    {
-      cache: "no-store",
-    }
-  );
 
-  if (!response.ok) {
+  const response =
+    await fetch(
+      `${API_URL}/api/products/slug/${slug}`,
+      {
+        cache:
+          "no-store",
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -167,32 +253,92 @@ export async function getProductBySlug(
     );
   }
 
-  const data: ProductApiResponse =
-    await response.json();
+  const data:
+    ProductApiResponse =
+      await response.json();
 
-  return mapProduct(data);
+  return mapProduct(
+    data
+  );
+}
+
+export async function uploadProductImage(
+  file: File,
+  accessToken: string
+): Promise<string> {
+
+  const formData =
+    new FormData();
+
+  formData.append(
+    "image",
+    file
+  );
+
+  const response =
+    await fetch(
+      `${API_URL}/api/products/images`,
+      {
+        method:
+          "POST",
+
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+
+        body:
+          formData,
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
+    throw new Error(
+      await getErrorMessage(
+        response
+      )
+    );
+  }
+
+  const data:
+    ImageUploadResponse =
+      await response.json();
+
+  return data.imageUrl;
 }
 
 export async function createProduct(
-  product: ProductRequest
+  product: ProductRequest,
+  accessToken: string
 ): Promise<Product> {
-  const response = await fetch(
-    `${API_URL}/api/products`,
-    {
-      method: "POST",
 
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
+  const response =
+    await fetch(
+      `${API_URL}/api/products`,
+      {
+        method:
+          "POST",
 
-      body: JSON.stringify(
-        product
-      ),
-    }
-  );
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
 
-  if (!response.ok) {
+          "Content-Type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify(
+            product
+          ),
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -200,33 +346,46 @@ export async function createProduct(
     );
   }
 
-  const data: ProductApiResponse =
-    await response.json();
+  const data:
+    ProductApiResponse =
+      await response.json();
 
-  return mapProduct(data);
+  return mapProduct(
+    data
+  );
 }
 
 export async function updateProduct(
   id: string,
-  product: ProductRequest
+  product: ProductRequest,
+  accessToken: string
 ): Promise<Product> {
-  const response = await fetch(
-    `${API_URL}/api/products/${id}`,
-    {
-      method: "PUT",
 
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
+  const response =
+    await fetch(
+      `${API_URL}/api/products/${id}`,
+      {
+        method:
+          "PUT",
 
-      body: JSON.stringify(
-        product
-      ),
-    }
-  );
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
 
-  if (!response.ok) {
+          "Content-Type":
+            "application/json",
+        },
+
+        body:
+          JSON.stringify(
+            product
+          ),
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response
@@ -234,23 +393,37 @@ export async function updateProduct(
     );
   }
 
-  const data: ProductApiResponse =
-    await response.json();
+  const data:
+    ProductApiResponse =
+      await response.json();
 
-  return mapProduct(data);
+  return mapProduct(
+    data
+  );
 }
 
 export async function deleteProduct(
-  id: string
+  id: string,
+  accessToken: string
 ): Promise<void> {
-  const response = await fetch(
-    `${API_URL}/api/products/${id}`,
-    {
-      method: "DELETE",
-    }
-  );
 
-  if (!response.ok) {
+  const response =
+    await fetch(
+      `${API_URL}/api/products/${id}`,
+      {
+        method:
+          "DELETE",
+
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+  if (
+    !response.ok
+  ) {
     throw new Error(
       await getErrorMessage(
         response

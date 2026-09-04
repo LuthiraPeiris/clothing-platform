@@ -9,6 +9,7 @@ import {
 
 import Image from "next/image";
 import Link from "next/link";
+
 import {
   useRouter,
 } from "next/navigation";
@@ -20,6 +21,10 @@ import {
 import {
   formatCurrency,
 } from "@/lib/formatters";
+
+import {
+  getAccessToken,
+} from "@/services/auth-service";
 
 import {
   deleteProduct,
@@ -42,7 +47,9 @@ export function ProductTable({
   const [
     products,
     setProducts,
-  ] = useState<Product[]>(
+  ] = useState<
+    Product[]
+  >(
     initialProducts
   );
 
@@ -68,19 +75,27 @@ export function ProductTable({
         `Are you sure you want to delete "${product.name}"?`
       );
 
-    if (!confirmed) {
+    if (
+      !confirmed
+    ) {
       return;
     }
 
     try {
-      setError(null);
+      setError(
+        null
+      );
 
       setDeletingId(
         product.id
       );
 
+      const accessToken =
+        await getAccessToken();
+
       await deleteProduct(
-        product.id
+        product.id,
+        accessToken
       );
 
       setProducts(
@@ -93,13 +108,17 @@ export function ProductTable({
       );
 
       router.refresh();
+
     } catch (error) {
+
       setError(
         error instanceof Error
           ? error.message
           : "Failed to delete product."
       );
+
     } finally {
+
       setDeletingId(
         null
       );
@@ -115,14 +134,13 @@ export function ProductTable({
           </h2>
 
           <p className="mt-1 text-sm text-neutral-500">
-            Manage your store
-            catalogue.
+            Manage your store catalogue.
           </p>
         </div>
 
         <Link
           href="/admin/products/new"
-          className="inline-flex h-11 items-center justify-center gap-2 bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800"
+          className="inline-flex h-11 items-center justify-center gap-2 bg-[#a26b42] px-5 text-sm font-medium text-white transition hover:bg-[#8d5c39]"
         >
           <Plus
             size={17}
@@ -175,6 +193,10 @@ export function ProductTable({
                   deletingId ===
                   product.id;
 
+                const stock =
+                  product.stock ??
+                  0;
+
                 return (
                   <tr
                     key={
@@ -193,6 +215,7 @@ export function ProductTable({
                               product.name
                             }
                             fill
+                            sizes="52px"
                             className="object-cover"
                           />
                         </div>
@@ -231,15 +254,17 @@ export function ProductTable({
                       </span>
                     </td>
 
-                    <td className="px-5 py-4 text-neutral-400">
-                      —
+                    <td className="px-5 py-4">
+                      <span className="font-medium text-neutral-950">
+  {stock}
+</span>
                     </td>
 
                     <td className="px-5 py-4">
                       <div className="flex justify-end gap-1">
                         <Link
                           href={`/admin/products/${product.id}/edit`}
-                          className="flex h-9 w-9 items-center justify-center transition hover:bg-neutral-100"
+                          className="flex h-9 w-9 items-center justify-center transition hover:bg-[#f8f3ef] hover:text-[#a26b42]"
                           aria-label={`Edit ${product.name}`}
                         >
                           <Edit
@@ -267,7 +292,7 @@ export function ProductTable({
 
                         <button
                           type="button"
-                          className="flex h-9 w-9 items-center justify-center text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-950"
+                          className="flex h-9 w-9 items-center justify-center text-neutral-400 transition hover:bg-[#f8f3ef] hover:text-[#a26b42]"
                           aria-label={`More actions for ${product.name}`}
                         >
                           <MoreHorizontal
@@ -288,8 +313,7 @@ export function ProductTable({
                   colSpan={6}
                   className="px-5 py-16 text-center text-sm text-neutral-500"
                 >
-                  No products
-                  available.
+                  No products available.
                 </td>
               </tr>
             )}
