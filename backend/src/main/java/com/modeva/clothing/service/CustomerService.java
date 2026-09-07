@@ -32,7 +32,7 @@ public class CustomerService {
     /*
      * ADMIN
      *
-     * Returns all registered customers.
+     * Returns all customers.
      */
     public List<CustomerResponse>
     getAllCustomers() {
@@ -73,23 +73,38 @@ public class CustomerService {
     }
 
     /*
-     * Called when a customer places
-     * an order.
+     * CUSTOMER
      *
-     * If the email already exists,
-     * update the customer's latest
-     * name and phone number.
+     * Called when an authenticated customer
+     * places an order.
      *
-     * Otherwise create a new
-     * customer record.
+     * The Keycloak user ID is the primary
+     * identity.
+     *
+     * For older database rows, we temporarily
+     * fall back to email and attach the
+     * Keycloak user ID to that customer.
      */
     @Transactional
     public Customer
     registerOrUpdateCustomer(
+            String keycloakUserId,
             String name,
             String email,
             String phone
     ) {
+
+        if (
+                keycloakUserId == null ||
+                keycloakUserId.isBlank()
+        ) {
+            throw new IllegalArgumentException(
+                    "Authenticated user ID is required."
+            );
+        }
+
+        String normalizedKeycloakUserId =
+                keycloakUserId.trim();
 
         String normalizedEmail =
                 email
@@ -102,31 +117,109 @@ public class CustomerService {
         String normalizedPhone =
                 phone.trim();
 
+        /*
+         * First try the proper identity:
+         * Keycloak user ID.
+         */
         Customer customer =
                 customerRepository
-                        .findByEmail(
-                                normalizedEmail
+                        .findByKeycloakUserId(
+                                normalizedKeycloakUserId
                         )
-                        .orElseGet(
-                                () ->
-                                        Customer.builder()
-                                                .name(
-                                                        normalizedName
-                                                )
-                                                .email(
-                                                        normalizedEmail
-                                                )
-                                                .phone(
-                                                        normalizedPhone
-                                                )
-                                                .status(
-                                                        CustomerStatus.ACTIVE
-                                                )
-                                                .build()
-                        );
+                        .orElse(null);
 
+        /*
+         * Migration compatibility:
+         *
+         * Older customer rows were created
+         * using only email.
+         *
+         * If we find one, attach the current
+         * Keycloak ID instead of creating
+         * a duplicate customer.
+         */
+        if (
+                customer == null
+        ) {
+
+            customer =
+                    customerRepository
+                            .findByEmail(
+                                    normalizedEmail
+                            )
+                            .orElse(null);
+
+            if (
+                    customer != null
+            ) {
+
+                /*
+                 * Only attach the Keycloak ID
+                 * if this old customer does not
+                 * already belong to another
+                 * Keycloak account.
+                 */
+                if (
+                        customer.getKeycloakUserId()
+                                == null ||
+                        customer.getKeycloakUserId()
+                                .isBlank()
+                ) {
+
+                    customer.setKeycloakUserId(
+                            normalizedKeycloakUserId
+                    );
+
+                } else if (
+                        !customer.getKeycloakUserId()
+                                .equals(
+                                        normalizedKeycloakUserId
+                                )
+                ) {
+
+                    throw new IllegalStateException(
+                            "This customer email is already linked to another account."
+                    );
+                }
+            }
+        }
+
+        /*
+         * Completely new customer.
+         */
+        if (
+                customer == null
+        ) {
+
+            customer =
+                    Customer.builder()
+                            .keycloakUserId(
+                                    normalizedKeycloakUserId
+                            )
+                            .name(
+                                    normalizedName
+                            )
+                            .email(
+                                    normalizedEmail
+                            )
+                            .phone(
+                                    normalizedPhone
+                            )
+                            .status(
+                                    CustomerStatus.ACTIVE
+                            )
+                            .build();
+        }
+
+        /*
+         * Update the latest customer details.
+         */
         customer.setName(
                 normalizedName
+        );
+
+        customer.setEmail(
+                normalizedEmail
         );
 
         customer.setPhone(
@@ -138,6 +231,261 @@ public class CustomerService {
                         customer
                 );
     }
+
+    /*
+ * CUSTOMER
+ *
+ * Return the currently authenticated
+ * customer's profile using the Keycloak
+ * subject as the identity.
+ */
+@Transactional
+public CustomerResponse syncCurrentCustomer(
+        String keycloakUserId,
+        String email,
+        String displayName
+) {
+
+    if (
+            keycloakUserId == null ||
+            keycloakUserId.isBlank()
+    ) {
+        throw new IllegalArgumentException(
+                "Authenticated user ID is required."
+        );
+    }
+
+    if (
+            email == null ||
+            email.isBlank()
+    ) {
+        throw new IllegalArgumentException(
+                "Authenticated user email is required."
+        );
+    }
+
+    String normalizedKeycloakUserId =
+            keycloakUserId.trim();
+
+    String normalizedEmail =
+            email
+                    .trim()
+                    .toLowerCase();
+
+    String normalizedName =
+            displayName != null &&
+            !displayName.isBlank()
+                    ? displayName.trim()
+                    : normalizedEmail;
+
+    /*
+     * First try the proper Keycloak identity.
+     */
+    Customer customer =
+            customerRepository
+                    .findByKeycloakUserId(
+                            normalizedKeycloakUserId
+                    )
+                    .orElse(null);
+
+    /*
+     * Already linked customer.
+     *
+     * Email comes from Keycloak, so keep
+     * the database email synchronized.
+     *
+     * Do NOT overwrite name or phone,
+     * because the customer may have edited
+     * those inside MODEVA.
+     */
+    if (
+            customer != null
+    ) {
+
+        customer.setEmail(
+                normalizedEmail
+        );
+
+        Customer updatedCustomer =
+                customerRepository.save(
+                        customer
+                );
+
+        return mapToResponse(
+                updatedCustomer
+        );
+    }
+
+    /*
+     * Migration support:
+     *
+     * Customer may have existed before
+     * Keycloak ID linking was introduced.
+     */
+    customer =
+            customerRepository
+                    .findByEmail(
+                            normalizedEmail
+                    )
+                    .orElse(null);
+
+    if (
+            customer != null
+    ) {
+
+        if (
+                customer.getKeycloakUserId() == null ||
+                customer.getKeycloakUserId().isBlank()
+        ) {
+
+            customer.setKeycloakUserId(
+                    normalizedKeycloakUserId
+            );
+
+        } else if (
+                !customer.getKeycloakUserId()
+                        .equals(
+                                normalizedKeycloakUserId
+                        )
+        ) {
+
+            throw new IllegalStateException(
+                    "This email is already linked to another account."
+            );
+        }
+
+        Customer linkedCustomer =
+                customerRepository.save(
+                        customer
+                );
+
+        return mapToResponse(
+                linkedCustomer
+        );
+    }
+
+    /*
+     * Brand-new Keycloak user.
+     *
+     * Phone starts empty because Keycloak
+     * currently does not provide it.
+     */
+    Customer newCustomer =
+            Customer.builder()
+                    .keycloakUserId(
+                            normalizedKeycloakUserId
+                    )
+                    .name(
+                            normalizedName
+                    )
+                    .email(
+                            normalizedEmail
+                    )
+                    .phone("")
+                    .status(
+                            CustomerStatus.ACTIVE
+                    )
+                    .build();
+
+    Customer savedCustomer =
+            customerRepository.save(
+                    newCustomer
+            );
+
+    return mapToResponse(
+            savedCustomer
+    );
+}
+
+
+public CustomerResponse
+getCurrentCustomer(
+        String keycloakUserId
+) {
+
+    if (
+            keycloakUserId == null ||
+            keycloakUserId.isBlank()
+    ) {
+        throw new IllegalArgumentException(
+                "Authenticated user ID is required."
+        );
+    }
+
+    Customer customer =
+            customerRepository
+                    .findByKeycloakUserId(
+                            keycloakUserId.trim()
+                    )
+                    .orElseThrow(
+                            () ->
+                                    new CustomerNotFoundException(
+                                            "Customer profile not found."
+                                    )
+                    );
+
+    return mapToResponse(
+            customer
+    );
+}
+
+
+/*
+ * CUSTOMER
+ *
+ * Update the currently authenticated
+ * customer's profile.
+ *
+ * A customer cannot provide another
+ * customer ID in the request.
+ */
+@Transactional
+public CustomerResponse
+updateCurrentCustomer(
+        String keycloakUserId,
+        String name,
+        String phone
+) {
+
+    if (
+            keycloakUserId == null ||
+            keycloakUserId.isBlank()
+    ) {
+        throw new IllegalArgumentException(
+                "Authenticated user ID is required."
+        );
+    }
+
+    Customer customer =
+            customerRepository
+                    .findByKeycloakUserId(
+                            keycloakUserId.trim()
+                    )
+                    .orElseThrow(
+                            () ->
+                                    new CustomerNotFoundException(
+                                            "Customer profile not found."
+                                    )
+                    );
+
+    customer.setName(
+            name.trim()
+    );
+
+    customer.setPhone(
+            phone.trim()
+    );
+
+    Customer updatedCustomer =
+            customerRepository
+                    .save(
+                            customer
+                    );
+
+    return mapToResponse(
+            updatedCustomer
+    );
+}
 
     /*
      * ADMIN
@@ -180,37 +528,46 @@ public class CustomerService {
     /*
      * Build customer statistics.
      *
-     * Existing customer records are
-     * currently identified by email,
-     * so we match historical orders
-     * using normalized email.
+     * New customers:
+     * use Keycloak ownership.
+     *
+     * Old customers:
+     * temporarily fall back to email.
      */
     private CustomerResponse
     mapToResponse(
             Customer customer
     ) {
 
-        String customerEmail =
-                customer
-                        .getEmail()
-                        .trim()
-                        .toLowerCase();
+        List<Order> orders;
 
-        List<Order> orders =
-                orderRepository
-                        .findAll()
-                        .stream()
-                        .filter(
-                                order ->
-                                        order.getEmail() != null
-                                                &&
-                                                order.getEmail()
-                                                        .trim()
-                                                        .equalsIgnoreCase(
-                                                                customerEmail
-                                                        )
-                        )
-                        .toList();
+        if (
+                customer.getKeycloakUserId()
+                        != null &&
+                !customer.getKeycloakUserId()
+                        .isBlank()
+        ) {
+
+            orders =
+                    orderRepository
+                            .findAllByKeycloakUserIdOrderByCreatedAtDesc(
+                                    customer.getKeycloakUserId()
+                            );
+
+        } else {
+
+            String customerEmail =
+                    customer
+                            .getEmail()
+                            .trim()
+                            .toLowerCase();
+
+            orders =
+                    orderRepository
+                            .findAllByEmail(
+                                    customerEmail
+                            );
+        }
 
         BigDecimal totalSpent =
                 orders

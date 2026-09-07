@@ -220,11 +220,12 @@ public class OrderService {
          * information behavior.
          */
         customerService
-                .registerOrUpdateCustomer(
-                        request.customerName(),
-                        request.email(),
-                        request.phone()
-                );
+        .registerOrUpdateCustomer(
+                keycloakUserId,
+                request.customerName(),
+                request.email(),
+                request.phone()
+        );
 
         String normalizedEmail =
                 request.email()

@@ -46,11 +46,21 @@ public class SecurityConfig {
     ) throws Exception {
 
         http
+
+                /*
+                 * REST API authentication is
+                 * token based, so CSRF is not
+                 * required here.
+                 */
                 .csrf(
                         csrf ->
                                 csrf.disable()
                 )
 
+                /*
+                 * Allow requests from the
+                 * Next.js frontend.
+                 */
                 .cors(
                         cors ->
                                 cors.configurationSource(
@@ -63,7 +73,7 @@ public class SecurityConfig {
                                 auth
 
                                         /*
-                                         * Public uploaded images.
+                                         * Public uploaded product images.
                                          */
                                         .requestMatchers(
                                                 HttpMethod.GET,
@@ -81,11 +91,7 @@ public class SecurityConfig {
                                         .permitAll()
 
                                         /*
-                                         * ADMIN product operations.
-                                         *
-                                         * This includes:
-                                         * POST /api/products
-                                         * POST /api/products/images
+                                         * ADMIN product creation.
                                          */
                                         .requestMatchers(
                                                 HttpMethod.POST,
@@ -95,6 +101,9 @@ public class SecurityConfig {
                                                 "ADMIN"
                                         )
 
+                                        /*
+                                         * ADMIN product updates.
+                                         */
                                         .requestMatchers(
                                                 HttpMethod.PUT,
                                                 "/api/products/**"
@@ -111,6 +120,9 @@ public class SecurityConfig {
                                                 "ADMIN"
                                         )
 
+                                        /*
+                                         * ADMIN product deletion.
+                                         */
                                         .requestMatchers(
                                                 HttpMethod.DELETE,
                                                 "/api/products/**"
@@ -119,6 +131,9 @@ public class SecurityConfig {
                                                 "ADMIN"
                                         )
 
+                                        /*
+                                         * Inventory is ADMIN only.
+                                         */
                                         .requestMatchers(
                                                 "/api/inventory/**"
                                         )
@@ -126,6 +141,9 @@ public class SecurityConfig {
                                                 "ADMIN"
                                         )
 
+                                        /*
+                                         * General admin endpoints.
+                                         */
                                         .requestMatchers(
                                                 "/api/admin/**"
                                         )
@@ -133,49 +151,133 @@ public class SecurityConfig {
                                                 "ADMIN"
                                         )
 
+                                        /*
+                                         * CUSTOMER
+                                         *
+                                         * The currently authenticated
+                                         * customer can read their own
+                                         * profile.
+                                         *
+                                         * IMPORTANT:
+                                         * This must appear before
+                                         * /api/customers/**.
+                                         */
                                         .requestMatchers(
-        HttpMethod.GET,
-        "/api/orders"
-)
-.hasRole("ADMIN")
+                                                HttpMethod.GET,
+                                                "/api/customers/me"
+                                        )
+                                        .hasRole(
+                                                "CUSTOMER"
+                                        )
 
-/*
- * Customer order history and
- * individual order reads.
- *
- * Ownership is checked by OrderService.
- */
-.requestMatchers(
-        HttpMethod.GET,
-        "/api/orders/**"
-)
-.hasAnyRole(
-        "CUSTOMER",
-        "ADMIN"
-)
+                                        /*
+                                         * CUSTOMER
+                                         *
+                                         * Update own profile.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.PUT,
+                                                "/api/customers/me"
+                                        )
+                                        .hasRole(
+                                                "CUSTOMER"
+                                        )
 
-/*
- * Only CUSTOMER accounts place orders.
- */
-.requestMatchers(
-        HttpMethod.POST,
-        "/api/orders"
-)
-.hasRole("CUSTOMER")
+                                        /*
+                                         * ADMIN
+                                         *
+                                         * All remaining customer
+                                         * management endpoints.
+                                         *
+                                         * Examples:
+                                         *
+                                         * GET /api/customers
+                                         * GET /api/customers/{id}
+                                         * PATCH /api/customers/{id}/status
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/api/customers/me/sync"
+                                        )
+                                        .hasRole(
+                                                "CUSTOMER"
+                                        )
 
-/*
- * Only ADMIN can change order state.
- */
-.requestMatchers(
-        HttpMethod.PATCH,
-        "/api/orders/**"
-)
-.hasRole("ADMIN")
+                                        .requestMatchers(
+                                                "/api/customers/**"
+                                        )
+                                        .hasRole(
+                                                "ADMIN"
+                                        )
 
+                                        /*
+                                         * ADMIN ONLY
+                                         *
+                                         * Get every order.
+                                         *
+                                         * This exact matcher must be
+                                         * before /api/orders/**.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/api/orders"
+                                        )
+                                        .hasRole(
+                                                "ADMIN"
+                                        )
+
+                                        /*
+                                         * CUSTOMER or ADMIN
+                                         *
+                                         * Customer ownership is still
+                                         * checked inside OrderService.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/api/orders/**"
+                                        )
+                                        .hasAnyRole(
+                                                "CUSTOMER",
+                                                "ADMIN"
+                                        )
+
+                                        /*
+                                         * CUSTOMER ONLY
+                                         *
+                                         * Place a new order.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/api/orders"
+                                        )
+                                        .hasRole(
+                                                "CUSTOMER"
+                                        )
+
+                                        /*
+                                         * ADMIN ONLY
+                                         *
+                                         * Change order status.
+                                         */
+                                        .requestMatchers(
+                                                HttpMethod.PATCH,
+                                                "/api/orders/**"
+                                        )
+                                        .hasRole(
+                                                "ADMIN"
+                                        )
+
+                                        /*
+                                         * Everything else requires a
+                                         * valid authenticated JWT.
+                                         */
                                         .anyRequest()
                                         .authenticated()
                 )
 
+                /*
+                 * Validate Keycloak JWTs.
+                 */
                 .oauth2ResourceServer(
                         oauth2 ->
                                 oauth2.jwt(
@@ -189,11 +291,25 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /*
+     * Convert Keycloak realm roles
+     * into Spring Security roles.
+     *
+     * Example:
+     *
+     * CUSTOMER
+     * becomes
+     * ROLE_CUSTOMER
+     *
+     * ADMIN
+     * becomes
+     * ROLE_ADMIN
+     */
     @Bean
     public Converter<
             Jwt,
             AbstractAuthenticationToken
-    > jwtAuthenticationConverter() {
+            > jwtAuthenticationConverter() {
 
         JwtAuthenticationConverter converter =
                 new JwtAuthenticationConverter();
@@ -206,6 +322,9 @@ public class SecurityConfig {
                                     authorities =
                                     new ArrayList<>();
 
+                            /*
+                             * Keep standard OAuth scopes.
+                             */
                             JwtGrantedAuthoritiesConverter
                                     defaultConverter =
                                     new JwtGrantedAuthoritiesConverter();
@@ -213,17 +332,23 @@ public class SecurityConfig {
                             Collection<GrantedAuthority>
                                     defaultAuthorities =
                                     defaultConverter
-                                            .convert(jwt);
+                                            .convert(
+                                                    jwt
+                                            );
 
                             if (
                                     defaultAuthorities
                                             != null
                             ) {
+
                                 authorities.addAll(
                                         defaultAuthorities
                                 );
                             }
 
+                            /*
+                             * Read Keycloak realm roles.
+                             */
                             Map<String, Object>
                                     realmAccess =
                                     jwt.getClaimAsMap(
@@ -248,16 +373,20 @@ public class SecurityConfig {
 
                                     roles
                                             .stream()
+
                                             .map(
                                                     Object::toString
                                             )
+
                                             .map(
                                                     role ->
                                                             new SimpleGrantedAuthority(
                                                                     "ROLE_"
-                                                                            + role.toUpperCase()
+                                                                            +
+                                                                            role.toUpperCase()
                                                             )
                                             )
+
                                             .forEach(
                                                     authorities::add
                                             );
@@ -268,6 +397,13 @@ public class SecurityConfig {
                         }
                 );
 
+        /*
+         * Spring authentication name
+         * will use the Keycloak username.
+         *
+         * jwt.getSubject() still gives us
+         * the stable Keycloak user ID.
+         */
         converter
                 .setPrincipalClaimName(
                         "preferred_username"
@@ -276,6 +412,10 @@ public class SecurityConfig {
         return converter;
     }
 
+    /*
+     * CORS configuration for
+     * Next.js development frontend.
+     */
     @Bean
     public CorsConfigurationSource
     corsConfigurationSource() {
@@ -318,10 +458,11 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration(
-                "/**",
-                configuration
-        );
+        source
+                .registerCorsConfiguration(
+                        "/**",
+                        configuration
+                );
 
         return source;
     }
