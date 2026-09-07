@@ -11,21 +11,35 @@ import {
   useState,
 } from "react";
 
-import keycloak, { initKeycloak } from "@/lib/keycloak";
+import keycloak, {
+  initKeycloak,
+} from "@/lib/keycloak";
+
+import {
+  syncMyCustomerProfile,
+} from "@/services/customer-service";
 
 type AuthContextValue = {
   initialized: boolean;
+
   authenticated: boolean;
+
   token?: string;
+
   userId?: string;
+
   username?: string;
+
   email?: string;
 
   isCustomer: boolean;
+
   isAdmin: boolean;
 
   login: () => void;
+
   register: () => void;
+
   logout: () => void;
 };
 
@@ -44,12 +58,16 @@ export function AuthProvider({
   const [
     initialized,
     setInitialized,
-  ] = useState(false);
+  ] = useState(
+    false
+  );
 
   const [
     authenticated,
     setAuthenticated,
-  ] = useState(false);
+  ] = useState(
+    false
+  );
 
   const [
     token,
@@ -59,51 +77,142 @@ export function AuthProvider({
   >(undefined);
 
   useEffect(() => {
-    let mounted = true;
+    let mounted =
+      true;
 
     async function initialize() {
-  try {
-    const isAuthenticated =
-      await initKeycloak();
+      try {
+        const isAuthenticated =
+          await initKeycloak();
 
-    if (!mounted) {
-      return;
+        if (
+          !mounted
+        ) {
+          return;
+        }
+
+        /*
+         * User is not logged in.
+         */
+        if (
+          !isAuthenticated
+        ) {
+          setAuthenticated(
+            false
+          );
+
+          setToken(
+            undefined
+          );
+
+          setInitialized(
+            true
+          );
+
+          return;
+        }
+
+        /*
+         * Keycloak authenticated
+         * successfully.
+         */
+        const currentToken =
+          keycloak.token;
+
+        setAuthenticated(
+          true
+        );
+
+        setToken(
+          currentToken
+        );
+
+        /*
+         * CUSTOMER ONLY
+         *
+         * Automatically create or link
+         * the local Customer record.
+         *
+         * ADMIN users do not need a
+         * Customer record.
+         */
+        if (
+          currentToken &&
+          keycloak.hasRealmRole(
+            "CUSTOMER"
+          )
+        ) {
+          try {
+            await syncMyCustomerProfile(
+              currentToken
+            );
+          } catch (
+            error
+          ) {
+            /*
+             * Do not destroy the Keycloak
+             * login session if local customer
+             * synchronization fails.
+             *
+             * We log the error and allow the
+             * application to continue.
+             */
+            console.error(
+              "Failed to synchronize customer profile:",
+              error
+            );
+          }
+        }
+
+        if (
+          mounted
+        ) {
+          setInitialized(
+            true
+          );
+        }
+      } catch (
+        error
+      ) {
+        console.error(
+          "Failed to initialize Keycloak:",
+          error
+        );
+
+        if (
+          mounted
+        ) {
+          setAuthenticated(
+            false
+          );
+
+          setToken(
+            undefined
+          );
+
+          setInitialized(
+            true
+          );
+        }
+      }
     }
-
-    setAuthenticated(
-      isAuthenticated
-    );
-
-    setToken(
-      keycloak.token
-    );
-
-    setInitialized(
-      true
-    );
-  } catch (error) {
-    console.error(
-      "Failed to initialize Keycloak:",
-      error
-    );
-
-    if (mounted) {
-      setInitialized(
-        true
-      );
-    }
-  }
-}
 
     initialize();
 
     return () => {
-      mounted = false;
+      mounted =
+        false;
     };
   }, []);
 
+  /*
+   * Refresh Keycloak access token
+   * while the user remains logged in.
+   */
   useEffect(() => {
-    if (!authenticated) {
+    if (
+      !authenticated
+    ) {
       return;
     }
 
@@ -116,12 +225,16 @@ export function AuthProvider({
                 30
               );
 
-            if (refreshed) {
+            if (
+              refreshed
+            ) {
               setToken(
                 keycloak.token
               );
             }
-          } catch (error) {
+          } catch (
+            error
+          ) {
             console.error(
               "Failed to refresh Keycloak token:",
               error
@@ -145,7 +258,9 @@ export function AuthProvider({
       window.clearInterval(
         interval
       );
-  }, [authenticated]);
+  }, [
+    authenticated,
+  ]);
 
   function login() {
     keycloak.login({
@@ -171,7 +286,9 @@ export function AuthProvider({
   const value:
     AuthContextValue = {
       initialized,
+
       authenticated,
+
       token,
 
       userId:
@@ -186,25 +303,33 @@ export function AuthProvider({
           ?.email,
 
       isCustomer:
+        authenticated &&
         keycloak.hasRealmRole(
           "CUSTOMER"
         ),
 
       isAdmin:
+        authenticated &&
         keycloak.hasRealmRole(
           "ADMIN"
         ),
 
       login,
+
       register,
+
       logout,
     };
 
   return (
     <AuthContext.Provider
-      value={value}
+      value={
+        value
+      }
     >
-      {children}
+      {
+        children
+      }
     </AuthContext.Provider>
   );
 }
@@ -215,7 +340,9 @@ export function useAuth() {
       AuthContext
     );
 
-  if (!context) {
+  if (
+    !context
+  ) {
     throw new Error(
       "useAuth must be used inside AuthProvider"
     );

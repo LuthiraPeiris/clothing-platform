@@ -12,6 +12,10 @@ import java.time.LocalDateTime;
                 @UniqueConstraint(
                         name = "uk_customer_email",
                         columnNames = "email"
+                ),
+                @UniqueConstraint(
+                        name = "uk_customer_keycloak_user_id",
+                        columnNames = "keycloak_user_id"
                 )
         }
 )
@@ -27,6 +31,21 @@ public class Customer {
             strategy = GenerationType.IDENTITY
     )
     private Long id;
+
+    /*
+     * The stable identity from Keycloak.
+     *
+     * This is the "sub" claim from the JWT.
+     *
+     * Nullable for now because older customer
+     * records may already exist without it.
+     */
+    @Column(
+            name = "keycloak_user_id",
+            unique = true,
+            length = 100
+    )
+    private String keycloakUserId;
 
     @Column(nullable = false)
     private String name;

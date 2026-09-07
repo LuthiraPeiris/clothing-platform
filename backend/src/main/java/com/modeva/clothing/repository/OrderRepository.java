@@ -47,4 +47,16 @@ public interface OrderRepository
             String orderNumber,
             String keycloakUserId
     );
+
+    /*
+     * Temporary migration support.
+     *
+     * Older customers were identified
+     * using email before we linked
+     * Customer to Keycloak.
+     */
+    List<Order>
+    findAllByEmail(
+            String email
+    );
 }
